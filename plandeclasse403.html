@@ -2,11 +2,12 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe</title>
+  <title>Plan de classe aligné</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
     .container { display: flex; gap: 20px; align-items: flex-start; }
+
     .left-panel { display: flex; flex-direction: column; gap: 10px; }
     .lien-box {
       width: 120px; padding: 10px; background-color: #87CEEB;
@@ -16,38 +17,42 @@
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
 
-    .cases { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
-    .case-container { display: inline-flex; background: none; }
+    .cases {
+      display: grid;
+      gap: 18px;
+      /* sera adapté dynamiquement */
+      justify-content: start;
+      margin-bottom: 30px;
+    }
     .subcase {
-      padding: 8px 16px;
-      margin-right: 3px;
-      border-radius: 5px;
+      background: #87CEEB;
+      padding: 10px 20px;
+      border-radius: 10px;
       font-weight: bold;
-      font-size: 1.1em;
+      font-size: 1.25em;
       white-space: nowrap;
       cursor: pointer;
       transition: background-color .3s, color .3s;
       display: flex;
       align-items: center;
       user-select: none;
-      background: #87CEEB;
+      min-width: 60px;
+      justify-content: center;
       border: none;
+      margin: 0;
+      box-sizing: border-box;
+      text-align: center;
     }
     .subcase.selected { background: #006400; color: #fff; }
     .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
-    .subcase.empty {
+    .subcase.empty, .spacer {
       background: none;
       pointer-events: none;
       visibility: hidden;
-      width: 60px;
-      margin-right: 3px;
       border: none;
+      min-width: 60px;
     }
-    .spacer {
-      width: 40px;
-      display: inline-block;
-    }
-    .header { display: flex; align-items: center; gap: 8px; }
+    .header { display: flex; align-items: center; gap: 10px; }
     .toggle { cursor: pointer; }
     .title { font-weight: bold; }
     .options { margin-top: 8px; display: none; padding-left: 4px; }
@@ -65,7 +70,7 @@
   </style>
 </head>
 <body>
-  <h1>Plan de classe</h1>
+  <h1>Plan de classe aligné</h1>
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -84,7 +89,7 @@
   </div>
 
   <script>
-    // Ex: ["Lucas", "Marc", 0, "Louis"], ["Hamid", "", 0, "Simon", "Louise"]
+    // Matrice : 0 = espace (séparateur table), "" = vide, reste = prénom
     const matrice = [
       ["Aya", "Roumaissa", 0, "Mohamed", "Maryam"],
       ["Merve", "Néhémie", 0, "Nemaaly", "Théo"],
@@ -93,6 +98,13 @@
       ["Raphaël", "Nour", 0, "Jilyan", "", 0, "Ismael", "Inès"]
     ];
 
+    // Adapter dynamiquement le nombre de colonnes de la grille CSS
+    let nbColonnes = 0;
+    matrice.forEach(ligne => { if (ligne.length > nbColonnes) nbColonnes = ligne.length; });
+    document.getElementById('cases').style.gridTemplateColumns =
+      `repeat(${nbColonnes}, minmax(60px, auto))`;
+
+    // --- Infractions
     const detailsOptions = {
       "Comportement": [
         "Insulte envers le professeur","Insulte envers un camarade","Insolence",
@@ -111,21 +123,24 @@
       ]
     };
 
-    // Génération de la grille avec séparateurs
+    // --- Grille alignée et toutes fonctionnalités ---
     const casesContainer = document.getElementById('cases');
     let num = 1, caseRefs = [];
     matrice.forEach(ligne => {
-      const cont = document.createElement('div');
-      cont.className = 'case-container';
-      ligne.forEach(cell => {
-        if (cell === 0) {
+      for (let i = 0; i < nbColonnes; i++) {
+        const cell = ligne[i];
+        if (cell === undefined) {
+          const empty = document.createElement('div');
+          empty.className = 'subcase empty';
+          casesContainer.append(empty);
+        } else if (cell === 0) {
           const spacer = document.createElement('div');
           spacer.className = 'spacer';
-          cont.append(spacer);
+          casesContainer.append(spacer);
         } else if (cell === "") {
           const empty = document.createElement('div');
           empty.className = 'subcase empty';
-          cont.append(empty);
+          casesContainer.append(empty);
         } else {
           const sc = document.createElement('div');
           sc.className = 'subcase';
@@ -159,22 +174,17 @@
           });
           sc.append(opts);
 
-          cont.append(sc);
+          sc.addEventListener('click', e => {
+            if (e.target.tagName === 'INPUT') return;
+            sc.classList.toggle('selected');
+          });
+          casesContainer.append(sc);
           num++;
         }
-      });
-      casesContainer.append(cont);
-    });
-
-    // Interaction et logique (présence, infractions, export, etc.)
-    document.querySelectorAll('.subcase').forEach(sc => {
-      if (!sc.classList.contains('empty')) {
-        sc.addEventListener('click', e => {
-          if (e.target.tagName === 'INPUT') return;
-          sc.classList.toggle('selected');
-        });
       }
     });
+
+    // --- Fonctions interaction ---
     document.querySelectorAll('.toggle').forEach(toggle => {
       toggle.addEventListener('change', function() {
         const sc = this.closest('.subcase');
