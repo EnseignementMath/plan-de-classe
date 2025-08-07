@@ -91,7 +91,7 @@
   </div>
 
   <script>
-    // 1) Liste des noms pour les cases (30 élèves ici, adapte à ta classe !)
+    // 1) Liste des prénoms à afficher dans les cases (30 prénoms)
     const noms = [
       "Alice", "Benoît", "Chloé", "David", "Emma",
       "Farid", "Gabrielle", "Hugo", "Inès", "Jules",
@@ -100,7 +100,7 @@
       "Ugo", "Valentine", "William", "Xavier", "Yasmine",
       "Zoé", "Axel", "Bruno", "Clara", "Diane"
     ];
-    // Tu peux bien sûr personnaliser l’ordre, les noms, etc.
+    // Remplace cette liste par tes propres prénoms si besoin.
 
     // 2) Infractions disponibles
     const detailsOptions = {
@@ -121,7 +121,7 @@
       ]
     };
 
-    // 3) Génération de la grille 3×5×2 = 30 sous-cases avec noms personnalisés
+    // 3) Génération de la grille 3×5×2 = 30 sous-cases avec les prénoms
     const casesContainer = document.getElementById('cases');
     let num = 1;
     for (let r = 0; r < 5; r++) {
@@ -133,7 +133,7 @@
           sc.className = 'subcase';
           sc.dataset.case = num;
 
-          // entête avec le prénom
+          // entête AVEC le prénom
           const header = document.createElement('div');
           header.className = 'header';
           const toggle = document.createElement('input');
@@ -142,7 +142,7 @@
           toggle.dataset.case = num;
           const title = document.createElement('span');
           title.className = 'title';
-          title.textContent = noms[num-1] || `Case ${num}`;
+          title.textContent = noms[num-1] || `Case ${num}`; // <-- Affiche le prénom !
           header.append(toggle, title);
           sc.append(header);
 
