@@ -2,27 +2,35 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe interactif</title>
+  <title>Plan de classe ajusté</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
     .cases { display: flex; flex-direction: column; gap: 18px; }
-    .case-container { display: flex; background: #87CEEB; border-radius: 5px; overflow: hidden; }
+    .case-container {
+      display: inline-flex; /* ! clé ! */
+      background: #87CEEB;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 4px;
+      gap: 0px;
+    }
     .subcase {
-      flex: 1;
-      padding: 8px;
+      /* flex: 1;  <-- Surtout PAS ! */
+      padding: 8px 14px;
       border-right: 1px solid rgba(255,255,255,.7);
       cursor: pointer;
       transition: background-color .3s, color .3s;
-      min-width: 120px;
-      width: fit-content;
-      max-width: 260px;
+      width: fit-content;          /* S’ajuste au contenu */
+      max-width: 300px;
+      min-width: 40px;
       word-break: break-word;
-      white-space: normal;
+      white-space: nowrap;         /* NE PAS couper le prénom, sauf très long */
       display: flex;
       align-items: center;
       justify-content: center;
       background: inherit;
+      box-sizing: border-box;
     }
     .subcase:last-child { border-right: none; }
     .subcase.selected { background: #006400; color: #fff; }
@@ -38,7 +46,6 @@
 <div class="cases" id="cases"></div>
 
 <script>
-// Déclare ta matrice ici (exemple)
 const matrice = [
   ["AÏT BOUAOUNE Aya", "Roua"],
   ["Mohamed", "Maryam"],
@@ -51,10 +58,7 @@ const matrice = [
   ["Nour", "Jilyan"],
   ["Ismael", "Inès"]
 ];
-// Tu peux mettre autant de lignes et de colonnes que tu veux !
-// Exemple simple : const matrice = [["Ninon","Rudy"],["Estelle","Marc"]];
 
-// Génération automatique de la grille
 function genererPlan() {
   const casesEl = document.getElementById('cases');
   casesEl.innerHTML = '';
@@ -63,7 +67,7 @@ function genererPlan() {
     const cont = document.createElement('div');
     cont.className = 'case-container';
     ligne.forEach(prenom => {
-      if (!prenom) return; // saute les cases vides
+      if (!prenom) return;
       const sc = document.createElement('div');
       sc.className = 'subcase';
       sc.dataset.case = num;
@@ -87,7 +91,7 @@ function genererPlan() {
     casesEl.append(cont);
   });
 
-  // Ajoute la sélection de présence
+  // Sélection de présence
   document.querySelectorAll('.subcase').forEach(sc => {
     sc.addEventListener('click', e => {
       if (e.target.tagName === 'INPUT') return;
