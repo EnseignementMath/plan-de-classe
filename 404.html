@@ -2,160 +2,192 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe - Liste libre</title>
+  <title>Plan de classe - Grille interactive</title>
   <style>
-    body { font-family: sans-serif; background: #f6f9fb; padding: 32px;}
-    h1 { text-align: center; }
-    .setup, .actions { margin-bottom: 1.5em; text-align: center;}
-    .input-list { width: 260px; min-height: 80px; }
-    .cases-list { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin-bottom: 18px;}
-    .case {
-      min-width: 120px; min-height: 52px; background: #91d4ef;
-      border-radius: 17px; display: flex; align-items: center; justify-content: center;
-      font-weight: bold; font-size: 1.18em; color: #111;
-      border: 2px solid #a2cee9;
-      cursor: grab;
-      box-shadow: 0 2px 10px #0001;
-      transition: box-shadow .2s, background .2s;
-      margin: 2px;
-      position: relative;
-      z-index: 1;
-      overflow: hidden;
+    body { font-family: sans-serif; margin: 0; background: #eaf6fd; }
+    h1 { text-align: center; margin: 24px 0 12px 0; }
+    .setup { text-align: center; margin-bottom: 20px; }
+    .setup label { font-weight: bold; }
+    .setup input, .setup textarea { font-size: 1.1em; }
+    .mainzone { display: flex; justify-content: center; gap: 32px; align-items: flex-start; }
+    .eleve-list {
+      min-width: 180px; background: #fff; border-radius: 12px;
+      padding: 12px 10px; box-shadow: 0 2px 16px #0001; min-height: 200px;
+      display: flex; flex-direction: column; gap: 7px; margin-top: 6px;
+      max-height: 78vh; overflow-y: auto;
     }
-    .case.drag-over {
-      background: #e6ffef !important;
-      box-shadow: 0 0 0 4px #169ec3, 0 2px 10px #0002;
-    }
-    .case.empty { background: #d7eefa; color: #aaa;}
-    .eleve-list { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 22px 0; justify-content: center;}
     .eleve {
-      background: #fff; border-radius: 10px; padding: 8px 16px; margin: 2px;
-      box-shadow: 0 1px 4px #0001; font-size: 1.04em; cursor: grab; border: 1.5px solid #8fcbe5;
-      user-select: none; display: inline-block; transition: box-shadow .2s, background .2s;
+      background: #c4ecfc; border-radius: 8px; padding: 7px 15px;
+      font-weight: bold; font-size: 1.08em; cursor: grab; user-select: none;
+      border: 1.5px solid #a7cfea;
+      transition: background 0.15s;
+      box-shadow: 0 1px 5px #0001;
+      text-align: center;
     }
-    .eleve:active { background: #d7f7ee;}
-    .export-box { width: 100%; height: 100px; margin-top: 10px; font-family: monospace;}
-    label { font-weight: bold;}
-    .actions { margin-top: 2em; }
-    .help { font-size: 0.96em; color: #777; margin-top: 1.2em;}
-    .btn-swap { background: #f5b; color: #fff; border: none; border-radius: 4px; font-size: 0.9em; padding: 3px 6px; cursor: pointer;}
-    .btn-swap:hover { background: #d08; }
+    .eleve:active { background: #96e3d9;}
+    .grille {
+      background: #e2f1fb; border-radius: 14px; box-shadow: 0 2px 18px #0002;
+      padding: 20px; overflow: auto; max-width: 92vw; max-height: 81vh;
+      margin-top: 8px;
+    }
+    .grille-table {
+      border-collapse: separate; border-spacing: 8px;
+      width: 100%; table-layout: fixed; min-width: 320px;
+    }
+    .grille-table td {
+      background: #b6defa; border-radius: 12px; min-width: 76px; min-height: 42px;
+      height: 48px; font-weight: bold; font-size: 1.11em;
+      text-align: center; vertical-align: middle; color: #111;
+      transition: background 0.15s;
+      border: 2.3px solid #b2cfe2;
+      cursor: pointer; overflow: hidden; position: relative;
+      white-space: nowrap;
+      box-shadow: 0 1px 4px #0002;
+    }
+    .grille-table td.drag-over {
+      background: #d1fbe7 !important;
+      box-shadow: 0 0 0 3px #1a99be, 0 2px 10px #0002;
+    }
+    .grille-table td.vide { background: #f7fafd; color: #c7c7c7;}
+    .export-box { width: 100%; height: 120px; margin-top: 8px; font-family: monospace; }
+    .actions { text-align: center; margin-top: 20px; }
+    .help { color: #666; font-size: 0.98em; text-align: center; margin-top: 17px;}
+    @media (max-width: 900px) {
+      .mainzone { flex-direction: column; align-items: center;}
+      .grille { max-width: 99vw;}
+    }
   </style>
 </head>
 <body>
-  <h1>🧩 Plan de classe — Liste libre / Ordre manuel</h1>
+  <h1>🟦 Générateur de plan de classe : grille interactive</h1>
   <div class="setup">
-    <label>Liste des prénoms (un prénom par ligne):</label><br>
-    <textarea id="eleves-input" class="input-list" placeholder="Prénom 1&#10;Prénom 2"></textarea>
+    <label>Prénoms (un par ligne):</label><br>
+    <textarea id="eleves-input" style="width:240px; height:88px;"></textarea>
     <br><br>
-    <label>Nombre de cases à placer :</label>
-    <input type="number" id="nb-cases-input" value="20" min="2" max="80" style="width:3.5em;">
-    <button onclick="genererCases()">Créer les cases</button>
+    <label>Lignes :</label>
+    <input type="number" id="rows-input" value="5" min="1" style="width:3em;">
+    &nbsp;
+    <label>Colonnes :</label>
+    <input type="number" id="cols-input" value="7" min="1" style="width:3em;">
+    <br><br>
+    <button onclick="genererGrille()">Créer la grille</button>
   </div>
 
-  <div class="eleve-list" id="eleve-list"></div>
-
-  <div id="cases-list" class="cases-list"></div>
+  <div class="mainzone">
+    <div>
+      <div style="font-weight:bold; text-align:center;">Élèves non placés</div>
+      <div class="eleve-list" id="eleve-list"></div>
+    </div>
+    <div>
+      <div class="grille" id="grille"></div>
+    </div>
+  </div>
 
   <div class="actions">
-    <button onclick="exporterListe()">Exporter la liste</button>
-    <br>
-    <textarea id="export-output" class="export-box" readonly placeholder="Copie-colle ici pour ton code matrice…"></textarea>
+    <button onclick="exporterMatrice()">Exporter la matrice</button><br>
+    <textarea id="export-output" class="export-box" readonly placeholder="Ici apparaîtra la matrice à copier…"></textarea>
   </div>
   <div class="help">
-    - Glisse un prénom dans une case pour l’y placer<br>
-    - Tu peux réordonner les cases par drag & drop (ou laisser des cases vides)<br>
-    - Clique sur "Exporter la liste" pour avoir la liste à coller dans ton site
+    🟦 Glisse les élèves dans la grille, où tu veux, puis clique sur "Exporter la matrice"<br>
+    🟦 Les cases vides apparaîtront comme <b>0</b> dans le code.<br>
+    🟦 Tu peux glisser un élève d'une case à une autre, ou le remettre dans la liste à gauche.
   </div>
 
 <script>
-let eleves = [], nbCases = 20, listeCases = [];
-
-function genererCases() {
-  // Prénoms de gauche
+let eleves = [], rows = 5, cols = 7, matrice = [];
+function genererGrille() {
   eleves = document.getElementById('eleves-input').value
     .split('\n').map(x => x.trim()).filter(x => !!x);
-  nbCases = parseInt(document.getElementById('nb-cases-input').value) || 1;
-
-  // Cases vides
-  listeCases = Array(nbCases).fill('');
-
-  // Zone prénoms non placés
+  rows = parseInt(document.getElementById('rows-input').value) || 1;
+  cols = parseInt(document.getElementById('cols-input').value) || 1;
+  matrice = Array.from({length: rows}, () => Array(cols).fill(0));
   document.getElementById('eleve-list').innerHTML = '';
   eleves.forEach(prenom => {
     const e = document.createElement('div');
     e.className = 'eleve';
     e.textContent = prenom;
     e.draggable = true;
-    e.ondragstart = ev => { ev.dataTransfer.setData("text/plain", prenom); };
+    e.ondragstart = ev => {
+      ev.dataTransfer.setData("prenom", prenom);
+      ev.dataTransfer.setData("from", "list");
+    };
     e.dataset.nom = prenom;
     document.getElementById('eleve-list').appendChild(e);
   });
-
-  // Cases placables
-  renderCases();
+  renderGrille();
 }
 
-function renderCases() {
-  const zone = document.getElementById('cases-list');
-  zone.innerHTML = '';
-  listeCases.forEach((val, idx) => {
-    const cell = document.createElement('div');
-    cell.className = 'case' + (val ? '' : ' empty');
-    cell.draggable = true;
-    cell.ondragstart = e => {
-      e.dataTransfer.setData("case-index", idx);
-      e.dataTransfer.effectAllowed = "move";
-    };
-    cell.ondragover = e => e.preventDefault();
-    cell.ondragenter = e => cell.classList.add('drag-over');
-    cell.ondragleave = e => cell.classList.remove('drag-over');
-    cell.ondrop = function(e) {
-      cell.classList.remove('drag-over');
-      const fromCaseIdx = e.dataTransfer.getData("case-index");
-      const prenom = e.dataTransfer.getData("text/plain");
-      if (prenom) {
-        // Drag depuis la liste de prénoms ou une autre case
-        if (cell.textContent && cell.textContent !== prenom) {
-          // Échange entre deux cases ou liste→case (case occupée)
-          const old = cell.textContent;
-          // Replace le prénom évincé à sa place
-          if (fromCaseIdx !== "" && !isNaN(fromCaseIdx)) {
-            // Cas case→case : swap
-            listeCases[fromCaseIdx] = old;
-          } else {
-            // Cas liste→case : remet le prénom dans la liste
-            const el = document.createElement('div');
-            el.className = 'eleve'; el.textContent = old;
-            el.draggable = true;
-            el.ondragstart = ev => { ev.dataTransfer.setData("text/plain", old); };
-            el.dataset.nom = old;
-            document.getElementById('eleve-list').appendChild(el);
-          }
+function renderGrille() {
+  const grilleDiv = document.getElementById('grille');
+  grilleDiv.innerHTML = '';
+  const table = document.createElement('table');
+  table.className = 'grille-table';
+  for (let r = 0; r < rows; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < cols; c++) {
+      const td = document.createElement('td');
+      td.className = matrice[r][c] ? '' : 'vide';
+      td.textContent = matrice[r][c] || '';
+      td.ondragover = e => e.preventDefault();
+      td.ondragenter = e => td.classList.add('drag-over');
+      td.ondragleave = e => td.classList.remove('drag-over');
+      td.ondrop = function(e) {
+        e.preventDefault();
+        td.classList.remove('drag-over');
+        const prenom = e.dataTransfer.getData("prenom");
+        const from = e.dataTransfer.getData("from");
+        if (!prenom) return;
+        // Retrait de la position précédente (dans la grille)
+        for (let i = 0; i < rows; i++)
+          for (let j = 0; j < cols; j++)
+            if (matrice[i][j] === prenom)
+              matrice[i][j] = 0;
+        // Si la case était occupée, remet l’ancien élève dans la liste à gauche
+        if (matrice[r][c] && matrice[r][c] !== prenom) {
+          addEleveToList(matrice[r][c]);
         }
-        listeCases[idx] = prenom;
-        renderCases();
-        // Supprime l’élève de la liste
-        Array.from(document.getElementsByClassName('eleve')).forEach(e => {
-          if (e.dataset.nom === prenom) e.remove();
-        });
-      } else if (fromCaseIdx !== "" && !isNaN(fromCaseIdx)) {
-        // Drag & drop pour échanger l’ordre des cases
-        const swapIdx = parseInt(fromCaseIdx);
-        [listeCases[swapIdx], listeCases[idx]] = [listeCases[idx], listeCases[swapIdx]];
-        renderCases();
-      }
-    };
-    // Affiche le prénom dans la case
-    if (val) cell.textContent = val;
-    else cell.textContent = '';
-    zone.appendChild(cell);
+        matrice[r][c] = prenom;
+        renderGrille();
+        removeEleveFromList(prenom);
+      };
+      // Permet de retirer un élève de la case (en le remettant à gauche)
+      td.onclick = function() {
+        if (matrice[r][c]) {
+          addEleveToList(matrice[r][c]);
+          matrice[r][c] = 0;
+          renderGrille();
+        }
+      };
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  grilleDiv.appendChild(table);
+}
+function addEleveToList(prenom) {
+  // Ne l'ajoute que s'il n'est pas déjà à gauche
+  if ([...document.querySelectorAll('.eleve-list .eleve')].some(e => e.textContent === prenom)) return;
+  const e = document.createElement('div');
+  e.className = 'eleve';
+  e.textContent = prenom;
+  e.draggable = true;
+  e.ondragstart = ev => {
+    ev.dataTransfer.setData("prenom", prenom);
+    ev.dataTransfer.setData("from", "list");
+  };
+  e.dataset.nom = prenom;
+  document.getElementById('eleve-list').appendChild(e);
+}
+function removeEleveFromList(prenom) {
+  [...document.querySelectorAll('.eleve-list .eleve')].forEach(e => {
+    if (e.textContent === prenom) e.remove();
   });
 }
 
-function exporterListe() {
-  let out = JSON.stringify(listeCases.map(v => v || 0), null, 2);
-  document.getElementById('export-output').value = out + "\n// À coller dans ta variable matrice dans ton code";
+function exporterMatrice() {
+  document.getElementById('export-output').value =
+    JSON.stringify(matrice, null, 2) +
+    "\n// À coller dans la variable matrice de ton site";
 }
 </script>
 </body>
