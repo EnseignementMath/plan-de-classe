@@ -5,9 +5,17 @@
   <title>Plan de classe</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
-    h1 { text-align: center; margin-bottom: 30px; }
-    .container { display: flex; gap: 20px; align-items: flex-start; }
+    h1 { text-align: center; margin-bottom: 24px; }
+    .setup {
+      max-width: 520px; margin: 24px auto; padding: 16px; background: #f5faff;
+      border-radius: 12px; box-shadow: 0 2px 12px #0001;
+    }
+    .setup label { font-weight: bold; }
+    .setup textarea { width: 300px; min-height: 80px; margin-bottom: 10px; }
+    .setup input[type="number"] { width: 3.5em; }
+    .setup button { margin-top: 10px; padding: 7px 18px; font-size: 1.1em; }
 
+    .container { display: flex; gap: 20px; align-items: flex-start; }
     .left-panel { display: flex; flex-direction: column; gap: 10px; }
     .lien-box {
       width: 120px; padding: 10px; background-color: #87CEEB;
@@ -16,50 +24,35 @@
     }
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
-
-    /* Grille flexible par ligne */
-    .cases {
-      display: flex;
-      flex-direction: column;
-      gap: 30px;
-      align-items: flex-start;
-    }
-    .case-container {
-      display: flex;
-      gap: 32px; /* espace entre les cases ou les espaces */
-      margin-bottom: 0px;
-      align-items: flex-start;
-    }
-    .space {
-      display: inline-block;
-      min-width: 64px;
-      width: 80px;
-      height: 10px;
-      /* tu peux augmenter width si tu veux de plus gros espaces */
-    }
+    .cases { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+    .row { display: flex; gap: 10px; }
     .subcase {
-      padding: 14px 26px;
-      border-radius: 22px;
-      background: #87CEEB;
-      font-weight: bold;
-      font-size: 1.25em; /* taille réduite ici */
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-      margin: 0;
-      border: none;
-      box-shadow: none;
-      gap: 10px;
-      transition: background .2s, color .2s;
-      border-right: none;
+      min-width: 90px; min-height: 36px; padding: 7px 10px; border-radius: 7px;
+      background: #c1eafc; border: 1.7px solid #7cc0d8;
+      font-weight: bold; font-size: 1.05em; text-align: center;
+      display: flex; align-items: center; justify-content: center;
+      box-sizing: border-box; transition: background 0.15s;
+      cursor: pointer; position: relative; white-space: nowrap; overflow: hidden;
     }
     .subcase.selected { background: #006400; color: #fff; }
     .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
-
-    .header { display: flex; align-items: center; gap: 10px; }
+    .subcase.empty { background: #f6fbfc; color: #b7b7b7; font-weight: normal; }
+    .subcase.drag-over { background: #e6ffef !important; }
+    .eleve-list {
+      min-width: 140px; background: #fff; border-radius: 8px; padding: 7px 7px 7px 7px;
+      box-shadow: 0 1px 8px #0001; min-height: 80px; margin-bottom: 16px;
+      display: flex; flex-direction: column; gap: 7px; max-height: 56vh; overflow-y: auto;
+    }
+    .eleve {
+      background: #e6f7fd; border-radius: 8px; padding: 5px 15px;
+      font-weight: bold; font-size: 1em; cursor: grab; user-select: none;
+      border: 1.2px solid #8dcfe4; margin-bottom: 4px; box-shadow: 0 1px 4px #0001;
+      text-align: center; transition: background 0.15s;
+    }
+    .eleve:active { background: #b3eed9;}
+    .header { display: flex; align-items: center; gap: 8px; }
     .toggle { cursor: pointer; }
     .title { font-weight: bold; }
-
     .options { margin-top: 8px; display: none; padding-left: 4px; }
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 200px; }
     #result-list { list-style: none; padding: 0; margin: 0; }
@@ -74,13 +67,33 @@
       display: inline-block; padding: 10px 20px;
       border: 2px solid #000; border-radius: 5px; font-weight: bold;
     }
+    .actions { text-align: center; margin: 24px 0 12px 0;}
   </style>
 </head>
 <body>
 
   <h1>Plan de classe</h1>
+  <div class="setup" id="setup-zone">
+    <label>Liste des prénoms (un prénom par ligne) :</label><br>
+    <textarea id="eleves-input" placeholder="Prénom 1&#10;Prénom 2&#10;Prénom 3"></textarea>
+    <br>
+    <label>Nombre de lignes : </label>
+    <input type="number" id="rows-input" value="5" min="1">
+    <label>Colonnes : </label>
+    <input type="number" id="cols-input" value="6" min="1">
+    <br>
+    <button onclick="genererGrille()">Créer la grille</button>
+    <div style="font-size:0.95em;color:#777;margin-top:0.8em;">
+      Ensuite, glisse-dépose les prénoms dans la grille puis clique sur "Valider le plan".
+    </div>
+  </div>
 
-  <div class="container">
+  <div class="actions" id="actions-zone" style="display:none;">
+    <button onclick="validerMatrice()">Valider le plan</button>
+    <span style="font-size:0.96em;color:#555;margin-left:12px;">(Tu pourras encore modifier plus tard !)</span>
+  </div>
+
+  <div class="container" id="main-app" style="display:none;">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
       <div class="lien-box" id="appel-box">Appel terminé</div>
@@ -100,350 +113,397 @@
     <div class="footer-box">Tableau</div>
   </div>
 
-  <script>
-    // --- MATRICE AVEC 0 POUR LES ESPACES ---
-    const matrice = [
-  [
-    0,
-    0,
-    0,
-    0,
-    0
-  ],
-  [
-    0,
-    0,
-    0,
-    0,
-    0
-  ],
-  [
-    0,
-    0,
-    0,
-    0,
-    0
-  ],
-  [
-    0,
-    "Lou",
-    0,
-    0,
-    0
-  ],
-  [
-    "Lolita",
-    "Momo",
-    "Marc",
-    0,
-    0
-  ],
-  [
-    "Louis",
-    "Estelle",
-    0,
-    0,
-    0
-  ],
-  [
-    0,
-    0,
-    0,
-    0,
-    0
-  ]
-];
+<script>
+let matrice = [];
+let prenoms = [];
+let rows = 5, cols = 6;
 
-    // --- INFRACTIONS DISPONIBLES ---
-    const detailsOptions = {
-      "Comportement": [
-        "Insulte envers le professeur","Insulte envers un camarade","Insolence",
-        "Langage familier","Refus de se taire","Refus de s'asseoir","Bavardages",
-        "Imitation de bruitages","Usage du téléphone","Retard",
-        "Insiste pour aller aux toilettes"
-      ],
-      "Travail non fait": [
-        "Exercice maison non rendu","Copie blanche","Leçon non apprise",
-        "Refus de participer","Réponse inappropriée"
-      ],
-      "Oubli de matériel": [
-        "Pas de stylo","Pas de trousse","Pas de rapporteur","Pas de compas",
-        "Pas ses codes","Pas de carnet","Pas de cahier","Pas de calculatrice",
-        "Pas de mouchoirs","Pas de copie"
-      ]
+// 1. Génération de la grille interactive drag & drop
+function genererGrille() {
+  prenoms = document.getElementById('eleves-input').value
+    .split('\n').map(x => x.trim()).filter(x => !!x);
+  rows = parseInt(document.getElementById('rows-input').value) || 1;
+  cols = parseInt(document.getElementById('cols-input').value) || 1;
+
+  matrice = Array.from({length: rows}, () => Array(cols).fill(0));
+  document.getElementById('setup-zone').style.display = 'none';
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('actions-zone').style.display = '';
+  // Génère la grille editable
+  renderGrilleEditable();
+}
+
+function renderGrilleEditable() {
+  // Grille d'édition
+  const zone = document.createElement('div');
+  zone.style.display = 'flex'; zone.style.flexDirection = 'row';
+  zone.style.gap = '36px'; zone.style.justifyContent = 'center'; zone.style.margin = '24px 0';
+
+  // Liste des prénoms non placés
+  const elist = document.createElement('div');
+  elist.className = 'eleve-list';
+  elist.id = 'edit-eleve-list';
+  prenoms.forEach(prenom => {
+    // Un prénom peut être déjà placé : ne l'affiche que s'il n'est pas dans la grille
+    if (matrice.flat().includes(prenom)) return;
+    const e = document.createElement('div');
+    e.className = 'eleve';
+    e.textContent = prenom;
+    e.draggable = true;
+    e.ondragstart = ev => {
+      ev.dataTransfer.setData("prenom", prenom);
+      ev.dataTransfer.setData("from", "list");
     };
+    e.dataset.nom = prenom;
+    elist.appendChild(e);
+  });
 
-    // --- GÉNÉRATION DE LA GRILLE ---
-    const casesContainer = document.getElementById('cases');
-    let num = 1, caseRefs = [], nomsIndex = [];
-    matrice.forEach((ligne, r) => {
-      const cont = document.createElement('div');
-      cont.className = 'case-container';
-      ligne.forEach((prenom, c) => {
-        if (prenom === 0) {
-          // espace large
-          const spacer = document.createElement('div');
-          spacer.className = 'space';
-          cont.appendChild(spacer);
-          nomsIndex.push(null);
-          return;
-        }
+  // Génération grille editable
+  const g = document.createElement('div');
+  g.style.background = '#e5f6ff';
+  g.style.borderRadius = '12px';
+  g.style.padding = '16px';
+  g.style.overflow = 'auto';
+  g.style.boxShadow = '0 2px 12px #0001';
+  g.style.minWidth = (cols * 100) + 'px';
+
+  const table = document.createElement('table');
+  table.style.borderSpacing = '10px';
+  table.style.margin = '0 auto';
+
+  for (let r = 0; r < rows; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < cols; c++) {
+      const td = document.createElement('td');
+      td.className = 'subcase empty';
+      td.style.width = '90px';
+      td.style.height = '38px';
+      td.dataset.row = r;
+      td.dataset.col = c;
+      td.ondragover = e => e.preventDefault();
+      td.ondragenter = e => td.classList.add('drag-over');
+      td.ondragleave = e => td.classList.remove('drag-over');
+      td.ondrop = function(e) {
+        e.preventDefault();
+        td.classList.remove('drag-over');
+        const prenom = e.dataTransfer.getData("prenom");
         if (!prenom) return;
-        const sc = document.createElement('div');
-        sc.className = 'subcase';
-        sc.dataset.case = num;
-        caseRefs.push(sc);
-        nomsIndex.push(prenom);
-
-        // entête AVEC le prénom
-        const header = document.createElement('div');
-        header.className = 'header';
-        const toggle = document.createElement('input');
-        toggle.type = 'checkbox';
-        toggle.className = 'toggle';
-        toggle.dataset.case = num;
-        const title = document.createElement('span');
-        title.className = 'title';
-        title.textContent = prenom;
-        header.append(toggle, title);
-        sc.append(header);
-
-        // options infractions
-        const opts = document.createElement('div');
-        opts.className = 'options';
-        Object.keys(detailsOptions).forEach(cat => {
-          const lbl = document.createElement('label');
-          const inp = document.createElement('input');
-          inp.type = 'checkbox';
-          inp.dataset.case = num;
-          inp.value = cat;
-          lbl.append(inp, ' ' + cat);
-          opts.append(lbl, document.createElement('br'));
-        });
-        sc.append(opts);
-
-        cont.append(sc);
-        num++;
-      });
-      casesContainer.append(cont);
-    });
-
-    // --- INTERACTIONS ---
-    document.querySelectorAll('.subcase').forEach(sc => {
-      sc.addEventListener('click', e => {
-        if (e.target.tagName === 'INPUT') return;
-        sc.classList.toggle('selected');
-      });
-    });
-    document.querySelectorAll('.toggle').forEach(toggle => {
-      toggle.addEventListener('change', function() {
-        const sc = this.closest('.subcase');
-        const opts = sc.querySelector('.options');
-        if (this.checked) opts.style.display = 'block';
-        else {
-          opts.style.display = 'none';
-          opts.querySelectorAll('input[type=checkbox]').forEach(cb => {
-            if (cb.checked) { removeResult(cb.dataset.case, cb.value); cb.checked = false; }
-          });
+        // Retire l'élève de toute autre case
+        for (let i = 0; i < rows; i++)
+          for (let j = 0; j < cols; j++)
+            if (matrice[i][j] === prenom) matrice[i][j] = 0;
+        matrice[r][c] = prenom;
+        renderGrilleEditable();
+      };
+      // Permet de retirer un élève de la case (retour à la liste)
+      td.onclick = function() {
+        if (matrice[r][c]) {
+          matrice[r][c] = 0;
+          renderGrilleEditable();
         }
-      });
-    });
-    document.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', function() {
-        this.checked ? addResult(this.dataset.case, this.value)
-                     : removeResult(this.dataset.case, this.value);
-      });
-    });
-    const resultList = document.getElementById('result-list');
-    function addResult(c,v){
-      const id = `result-${c}-${v}`;
-      if (!document.getElementById(id)) {
-        const li = document.createElement('li');
-        li.id = id;
-        li.textContent = `${findPrenomByCase(c)} : ${v}`;
-        resultList.append(li);
+      };
+      if (matrice[r][c]) {
+        td.textContent = matrice[r][c];
+        td.classList.remove('empty');
+      } else {
+        td.textContent = '';
+        td.classList.add('empty');
       }
+      tr.appendChild(td);
     }
-    function removeResult(c,v){
-      const el = document.getElementById(`result-${c}-${v}`);
-      if (!el) return;
-      const nxt = el.nextElementSibling;
-      if (nxt && nxt.classList.contains('detail-select')) nxt.remove();
-      el.remove();
-    }
-    resultList.addEventListener('click', e => {
-      const li = e.target;
-      if (li.tagName !== 'LI' || li.classList.contains('detail-select')) return;
-      const prev = resultList.querySelector('.detail-select');
-      if (prev) prev.remove();
-      const [prenom, rubrique] = li.textContent.split(' : ');
-      const opts = detailsOptions[rubrique];
-      if (!opts) return;
-      const c = findCaseByPrenom(prenom);
-      const sel = document.createElement('li');
-      sel.className = 'detail-select';
-      opts.forEach(opt => {
+    table.appendChild(tr);
+  }
+  g.appendChild(table);
+
+  zone.appendChild(elist);
+  zone.appendChild(g);
+
+  let editDiv = document.getElementById('editable-zone');
+  if (!editDiv) {
+    editDiv = document.createElement('div');
+    editDiv.id = 'editable-zone';
+    document.body.insertBefore(editDiv, document.getElementById('actions-zone'));
+  }
+  editDiv.innerHTML = '';
+  editDiv.appendChild(zone);
+}
+
+// 2. Quand l'utilisateur valide la grille, on "passe" la matrice générée à la suite de l'application (appel, infractions, etc.)
+function validerMatrice() {
+  // Nettoie la zone d'édition
+  document.getElementById('editable-zone').innerHTML = '';
+  document.getElementById('editable-zone').style.display = 'none';
+  document.getElementById('actions-zone').style.display = 'none';
+  document.getElementById('main-app').style.display = '';
+  document.getElementById('cases').innerHTML = '';
+  // Affiche la grille avec toutes les fonctionnalités
+  renderMainApp();
+}
+
+/*---------------------- Toutes tes fonctionnalités ici ----------------------*/
+
+const detailsOptions = {
+  "Comportement": [
+    "Insulte envers le professeur","Insulte envers un camarade","Insolence",
+    "Langage familier","Refus de se taire","Refus de s'asseoir","Bavardages",
+    "Imitation de bruitages","Usage du téléphone","Retard",
+    "Insiste pour aller aux toilettes"
+  ],
+  "Travail non fait": [
+    "Exercice maison non rendu","Copie blanche","Leçon non apprise",
+    "Refus de participer","Réponse inappropriée"
+  ],
+  "Oubli de matériel": [
+    "Pas de stylo","Pas de trousse","Pas de rapporteur","Pas de compas",
+    "Pas ses codes","Pas de carnet","Pas de cahier","Pas de calculatrice",
+    "Pas de mouchoirs","Pas de copie"
+  ]
+};
+
+// --- Génération de la grille de cases ajustées ---
+function renderMainApp() {
+  const casesContainer = document.getElementById('cases');
+  casesContainer.innerHTML = '';
+  let num = 1, caseRefs = [];
+  matrice.forEach((ligne, r) => {
+    const cont = document.createElement('div');
+    cont.className = 'row';
+    ligne.forEach((prenom, c) => {
+      if (!prenom) return; // case vide (espace)
+      const sc = document.createElement('div');
+      sc.className = 'subcase';
+      sc.dataset.case = num;
+      caseRefs.push(sc);
+
+      // entête AVEC le prénom
+      const header = document.createElement('div');
+      header.className = 'header';
+      const toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.className = 'toggle';
+      toggle.dataset.case = num;
+      const title = document.createElement('span');
+      title.className = 'title';
+      title.textContent = prenom;
+      header.append(toggle, title);
+      sc.append(header);
+
+      // options infractions
+      const opts = document.createElement('div');
+      opts.className = 'options';
+      Object.keys(detailsOptions).forEach(cat => {
         const lbl = document.createElement('label');
-        const cb  = document.createElement('input');
-        cb.type = 'checkbox'; cb.dataset.case = c; cb.value = opt;
-        lbl.append(cb, ' ' + opt);
-        sel.append(lbl, document.createElement('br'));
-        cb.addEventListener('change', () => {
-          if (cb.checked) {
-            li.textContent = `${prenom} : ${rubrique} : ${opt}`;
-            sel.remove();
+        const inp = document.createElement('input');
+        inp.type = 'checkbox';
+        inp.dataset.case = num;
+        inp.value = cat;
+        lbl.append(inp, ' ' + cat);
+        opts.append(lbl, document.createElement('br'));
+      });
+      sc.append(opts);
+
+      cont.append(sc);
+      num++;
+    });
+    casesContainer.appendChild(cont);
+  });
+
+  // Sélection et infractions
+  document.querySelectorAll('.subcase').forEach(sc => {
+    sc.addEventListener('click', e => {
+      if (e.target.tagName === 'INPUT') return;
+      sc.classList.toggle('selected');
+    });
+  });
+  document.querySelectorAll('.toggle').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+      const sc = this.closest('.subcase');
+      const opts = sc.querySelector('.options');
+      if (this.checked) opts.style.display = 'block';
+      else {
+        opts.style.display = 'none';
+        opts.querySelectorAll('input[type=checkbox]').forEach(cb => {
+          if (cb.checked) { removeResult(cb.dataset.case, cb.value); cb.checked = false; }
+        });
+      }
+    });
+  });
+  document.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+      this.checked ? addResult(this.dataset.case, this.value)
+                   : removeResult(this.dataset.case, this.value);
+    });
+  });
+}
+
+// Utilitaires pour retrouver prénom à partir du numéro de case
+function findPrenomByCase(n) {
+  let count = 1;
+  for (const ligne of matrice) for (const nom of ligne)
+    if (nom && count++ === parseInt(n)) return nom;
+  return "Case " + n;
+}
+function findCaseByPrenom(prenom) {
+  let count = 1;
+  for (const ligne of matrice) for (const nom of ligne)
+    if (nom && nom === prenom) return count;
+    else if (nom) count++;
+  return -1;
+}
+
+const resultList = document.getElementById('result-list');
+function addResult(c,v){
+  const id = `result-${c}-${v}`;
+  if (!document.getElementById(id)) {
+    const li = document.createElement('li');
+    li.id = id;
+    li.textContent = `${findPrenomByCase(c)} : ${v}`;
+    resultList.append(li);
+  }
+}
+function removeResult(c,v){
+  const el = document.getElementById(`result-${c}-${v}`);
+  if (!el) return;
+  const nxt = el.nextElementSibling;
+  if (nxt && nxt.classList.contains('detail-select')) nxt.remove();
+  el.remove();
+}
+resultList.addEventListener('click', e => {
+  const li = e.target;
+  if (li.tagName !== 'LI' || li.classList.contains('detail-select')) return;
+  const prev = resultList.querySelector('.detail-select');
+  if (prev) prev.remove();
+  const [prenom, rubrique] = li.textContent.split(' : ');
+  const opts = detailsOptions[rubrique];
+  if (!opts) return;
+  const c = findCaseByPrenom(prenom); // retrouver le numéro de case
+  const sel = document.createElement('li');
+  sel.className = 'detail-select';
+  opts.forEach(opt => {
+    const lbl = document.createElement('label');
+    const cb  = document.createElement('input');
+    cb.type = 'checkbox'; cb.dataset.case = c; cb.value = opt;
+    lbl.append(cb, ' ' + opt);
+    sel.append(lbl, document.createElement('br'));
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        li.textContent = `${prenom} : ${rubrique} : ${opt}`;
+        sel.remove();
+      }
+    });
+  });
+  li.insertAdjacentElement('afterend', sel);
+});
+
+// 5) Appel terminé
+document.getElementById('appel-box').addEventListener('click', () => {
+  const subs = Array.from(document.querySelectorAll('.subcase'));
+  const pres = subs.filter(sc => sc.classList.contains('selected'));
+  const abs  = subs.filter(sc => !sc.classList.contains('selected'));
+  let html = `<p>Élèves présents : ${pres.length}</p><p>Élèves absents :</p>`;
+  if (abs.length) abs.forEach(sc => {
+    html += `<p>${sc.querySelector('.title').textContent}</p>`;
+  });
+  else html += `<p>—</p>`;
+  document.getElementById('appel-result').innerHTML = html;
+});
+
+// 6) Mode contrôle & rendus
+const rendus = [], nomsRendus = [];
+const modeBtn = document.getElementById('mode-controle-box');
+const controleResult = document.getElementById('controle-result');
+let modeActive = false;
+
+modeBtn.addEventListener('click', () => {
+  modeActive = !modeActive;
+  modeBtn.classList.toggle('active', modeActive);
+  controleResult.innerHTML = modeActive
+    ? '<p class="control-message">A terminé le contrôle</p>'
+    : '';
+  if (!modeActive) { rendus.length = 0; nomsRendus.length = 0; }
+  document.querySelectorAll('.subcase').forEach(sc => {
+    const c = sc.dataset.case;
+    if (modeActive) {
+      const span = sc.querySelector('span.title');
+      if (!span) return;
+      const a = document.createElement('a');
+      a.href = '#'; a.textContent = findPrenomByCase(c); a.className = 'title-link';
+      a.addEventListener('click', e => {
+        e.stopPropagation();
+        const line = document.createElement('p');
+        line.innerHTML = `${findPrenomByCase(c)} : page : <input type="number" min="1">`;
+        controleResult.append(line);
+        const input = line.querySelector('input');
+        input.focus();
+        input.addEventListener('keydown', evt => {
+          if (evt.key === 'Enter') {
+            const pages = parseInt(input.value, 10) || 0;
+            line.textContent = `${findPrenomByCase(c)} : page : ${pages}`;
+            sc.classList.add('completed');
+            rendus.push({ case: c, pages });
+            for (let i = 0; i < pages; i++) {
+              nomsRendus.push(findPrenomByCase(c));
+            }
           }
         });
       });
-      li.insertAdjacentElement('afterend', sel);
-    });
-
-    // --- UTILS ---
-    function findPrenomByCase(n) {
-      n = parseInt(n, 10)-1;
-      let count = 0;
-      for (const ligne of matrice)
-        for (const nom of ligne)
-          if (nom !== 0 && nom) {
-            if (count === n) return nom;
-            count++;
-          }
-      return "Case " + (n+1);
+      span.replaceWith(a);
+    } else {
+      const link = sc.querySelector('a.title-link');
+      if (!link) return;
+      const span = document.createElement('span');
+      span.className = 'title';
+      span.textContent = findPrenomByCase(c);
+      link.replaceWith(span);
     }
-    function findCaseByPrenom(prenom) {
-      let count = 1;
-      for (const ligne of matrice)
-        for (const nom of ligne)
-          if (nom !== 0 && nom) {
-            if (nom === prenom) return count;
-            count++;
-          }
-      return -1;
+  });
+  modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
+});
+
+// 7) Export JSON pur + nomsRendus=[…] commenté
+document.getElementById('lien-box').addEventListener('click', () => {
+  const infractionsByCat = {
+    "Comportement": [], "Travail non fait": [], "Oubli de matériel": []
+  };
+  document.querySelectorAll('#result-list li:not(.detail-select)').forEach(li => {
+    const [prenom, cat] = li.textContent.split(' : ');
+    infractionsByCat[cat]?.push(li.textContent);
+  });
+  const subs = Array.from(document.querySelectorAll('.subcase'));
+  const presents = subs.filter(sc => sc.classList.contains('selected')).length;
+  const absents  = subs.filter(sc => !sc.classList.contains('selected'))
+                       .map(sc => sc.querySelector('.title').textContent);
+  const copiesOrdr = [];
+  rendus.forEach(o => {
+    for (let i = 0; i < o.pages; i++) {
+      copiesOrdr.push(findPrenomByCase(o.case));
     }
+  });
+  const now = new Intl.DateTimeFormat('fr-FR', {
+    timeZone:'Europe/Paris',year:'numeric',month:'2-digit',
+    day:'2-digit',hour:'2-digit',minute:'2-digit'
+  }).format(new Date()).replace(',','');
+  const [dp,tp] = now.split(' ');
+  const [jj,MM] = dp.split('/'), [hh,mm] = tp.split(':');
+  const stamp = `${jj}-${MM}-${hh}h${mm}`;
+  const output = {
+    date: `${stamp} (Europe/Paris)`,
+    infractions: infractionsByCat,
+    presents,
+    absents,
+    "Copies dans l'ordre des rendus": copiesOrdr
+  };
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `plan_de_classe_${stamp}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
 
-    // 5) Appel terminé
-    document.getElementById('appel-box').addEventListener('click', () => {
-      const subs = Array.from(document.querySelectorAll('.subcase'));
-      const pres = subs.filter(sc => sc.classList.contains('selected'));
-      const abs  = subs.filter(sc => !sc.classList.contains('selected'));
-      let html = `<p>Élèves présents : ${pres.length}</p><p>Élèves absents :</p>`;
-      if (abs.length) abs.forEach(sc => {
-        html += `<p>${sc.querySelector('.title').textContent}</p>`;
-      });
-      else html += `<p>—</p>`;
-      document.getElementById('appel-result').innerHTML = html;
-    });
-
-    // 6) Mode contrôle & rendus
-    const rendus = [], nomsRendus = [];
-    const modeBtn = document.getElementById('mode-controle-box');
-    const controleResult = document.getElementById('controle-result');
-    let modeActive = false;
-
-    modeBtn.addEventListener('click', () => {
-      modeActive = !modeActive;
-      modeBtn.classList.toggle('active', modeActive);
-      controleResult.innerHTML = modeActive
-        ? '<p class="control-message">A terminé le contrôle</p>'
-        : '';
-      if (!modeActive) { rendus.length = 0; nomsRendus.length = 0; }
-      document.querySelectorAll('.subcase').forEach(sc => {
-        const c = sc.dataset.case;
-        if (modeActive) {
-          const span = sc.querySelector('span.title');
-          if (!span) return;
-          const a = document.createElement('a');
-          a.href = '#'; a.textContent = findPrenomByCase(c); a.className = 'title-link';
-          a.addEventListener('click', e => {
-            e.stopPropagation();
-            const line = document.createElement('p');
-            line.innerHTML = `${findPrenomByCase(c)} : page : <input type="number" min="1">`;
-            controleResult.append(line);
-            const input = line.querySelector('input');
-            input.focus();
-            input.addEventListener('keydown', evt => {
-              if (evt.key === 'Enter') {
-                const pages = parseInt(input.value, 10) || 0;
-                line.textContent = `${findPrenomByCase(c)} : page : ${pages}`;
-                sc.classList.add('completed');
-                rendus.push({ case: c, pages });
-                for (let i = 0; i < pages; i++) {
-                  nomsRendus.push(findPrenomByCase(c));
-                }
-              }
-            });
-          });
-          span.replaceWith(a);
-        } else {
-          const link = sc.querySelector('a.title-link');
-          if (!link) return;
-          const span = document.createElement('span');
-          span.className = 'title';
-          span.textContent = findPrenomByCase(c);
-          link.replaceWith(span);
-        }
-      });
-      modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
-    });
-
-    // 7) Export JSON pur + nomsRendus=[…] commenté
-    document.getElementById('lien-box').addEventListener('click', () => {
-      // Infractions par catégorie
-      const infractionsByCat = {
-        "Comportement": [], "Travail non fait": [], "Oubli de matériel": []
-      };
-      document.querySelectorAll('#result-list li:not(.detail-select)').forEach(li => {
-        const [prenom, cat] = li.textContent.split(' : ');
-        if (infractionsByCat[cat]) infractionsByCat[cat].push(li.textContent);
-      });
-      // Présents / absents
-      const subs = Array.from(document.querySelectorAll('.subcase'));
-      const presents = subs.filter(sc => sc.classList.contains('selected')).length;
-      const absents  = subs.filter(sc => !sc.classList.contains('selected'))
-                           .map(sc => sc.querySelector('.title').textContent);
-      // Copies dans l'ordre
-      const copiesOrdr = [];
-      rendus.forEach(o => {
-        for (let i = 0; i < o.pages; i++) {
-          copiesOrdr.push(findPrenomByCase(o.case));
-        }
-      });
-      // Horodatage
-      const now = new Intl.DateTimeFormat('fr-FR', {
-        timeZone:'Europe/Paris',year:'numeric',month:'2-digit',
-        day:'2-digit',hour:'2-digit',minute:'2-digit'
-      }).format(new Date()).replace(',','');
-      const [dp,tp] = now.split(' ');
-      const [jj,MM] = dp.split('/'), [hh,mm] = tp.split(':');
-      const stamp = `${jj}-${MM}-${hh}h${mm}`;
-
-      // Création du JSON
-      const output = {
-        date: `${stamp} (Europe/Paris)`,
-        infractions: infractionsByCat,
-        presents,
-        absents,
-        "Copies dans l'ordre des rendus": copiesOrdr
-      };
-      const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `plan_de_classe_${stamp}.json`;
-      document.body.append(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      /* 
-      nomsRendus=[
-        "Alice",
-        "Benoît",
-        "Chloé"
-      ]
-      */
-    });
-  </script>
-
+</script>
 </body>
 </html>
