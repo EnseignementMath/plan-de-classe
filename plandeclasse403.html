@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe - Espaces larges sur 0</title>
+  <title>Plan de classe</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
@@ -17,24 +17,32 @@
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
 
+    /* Grille flexible par ligne */
     .cases {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 30px;
       align-items: flex-start;
     }
     .case-container {
       display: flex;
-      flex-direction: row;
-      gap: 18px;
-      margin-bottom: 6px;
+      gap: 32px; /* espace entre les cases ou les espaces */
+      margin-bottom: 0px;
+      align-items: flex-start;
+    }
+    .space {
+      display: inline-block;
+      min-width: 64px;
+      width: 80px;
+      height: 10px;
+      /* tu peux augmenter width si tu veux de plus gros espaces */
     }
     .subcase {
-      padding: 16px 30px;
+      padding: 14px 26px;
       border-radius: 22px;
       background: #87CEEB;
       font-weight: bold;
-      font-size: 2em;
+      font-size: 1.25em; /* taille réduite ici */
       display: flex;
       align-items: center;
       white-space: nowrap;
@@ -43,12 +51,15 @@
       box-shadow: none;
       gap: 10px;
       transition: background .2s, color .2s;
+      border-right: none;
     }
     .subcase.selected { background: #006400; color: #fff; }
     .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
+
     .header { display: flex; align-items: center; gap: 10px; }
-    .toggle { cursor: pointer; width: 32px; height: 32px; }
+    .toggle { cursor: pointer; }
     .title { font-weight: bold; }
+
     .options { margin-top: 8px; display: none; padding-left: 4px; }
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 200px; }
     #result-list { list-style: none; padding: 0; margin: 0; }
@@ -62,23 +73,6 @@
     .footer-box {
       display: inline-block; padding: 10px 20px;
       border: 2px solid #000; border-radius: 5px; font-weight: bold;
-    }
-    .spacer {
-      display: inline-block;
-      width: 70px;      /* ←←← AJUSTE CETTE VALEUR POUR LA LARGEUR DE L’ESPACE */
-      min-width: 70px;
-      max-width: 140px;
-      height: 10px;     /* invisible mais garde la ligne */
-      background: none !important;
-      border: none !important;
-      pointer-events: none !important;
-      box-shadow: none !important;
-      visibility: visible; /* doit rester visible pour créer l’espace */
-      margin: 0 10px;
-    }
-    @media (max-width: 650px) {
-      .subcase { font-size: 1.15em; padding: 8px 10px; }
-      .spacer { width: 28px; min-width: 28px; }
     }
   </style>
 </head>
@@ -107,14 +101,15 @@
   </div>
 
   <script>
-    // === MATRICE AVEC ZÉROS POUR LES ESPACES ===
+    // --- MATRICE AVEC 0 POUR LES ESPACES ---
     const matrice = [
-      ["Aya","Roumaissa",0,"Mohamed","Néhémie"],
-      ["Merve","",0,"Aissa","Louis"]
+      ["Aya", "Roumaissa", 0, "Mohamed", "Maryam", 0, "Merve", "Néhémie"],
+      ["Nemaaly", "Théo", 0, "Mathys", "Sheldon", 0, "Inahya", "Sam Ismaël"],
+      ["Aissa", 0, "Carlos", "Malone", 0, "Raphaël", "Nour", 0, "Jilyan", 0, "Ismael", "Inès"]
+      // Ajoute ou adapte tes lignes ici, mets 0 là où tu veux un espace large !
     ];
-    // Mets ta matrice personnalisée ici.
 
-    // INFRACTIONS DISPONIBLES
+    // --- INFRACTIONS DISPONIBLES ---
     const detailsOptions = {
       "Comportement": [
         "Insulte envers le professeur","Insulte envers un camarade","Insolence",
@@ -133,26 +128,29 @@
       ]
     };
 
-    // -- GÉNÉRATION DE LA GRILLE --
+    // --- GÉNÉRATION DE LA GRILLE ---
     const casesContainer = document.getElementById('cases');
-    let num = 1;
+    let num = 1, caseRefs = [], nomsIndex = [];
     matrice.forEach((ligne, r) => {
       const cont = document.createElement('div');
       cont.className = 'case-container';
-      ligne.forEach((cell, c) => {
-        if (cell === 0) {
-          // ESPACE LARGE
+      ligne.forEach((prenom, c) => {
+        if (prenom === 0) {
+          // espace large
           const spacer = document.createElement('div');
-          spacer.className = 'spacer';
-          cont.append(spacer);
+          spacer.className = 'space';
+          cont.appendChild(spacer);
+          nomsIndex.push(null);
           return;
         }
-        if (!cell) return;
+        if (!prenom) return;
         const sc = document.createElement('div');
         sc.className = 'subcase';
         sc.dataset.case = num;
+        caseRefs.push(sc);
+        nomsIndex.push(prenom);
 
-        // header/prénom + checkbox
+        // entête AVEC le prénom
         const header = document.createElement('div');
         header.className = 'header';
         const toggle = document.createElement('input');
@@ -161,7 +159,7 @@
         toggle.dataset.case = num;
         const title = document.createElement('span');
         title.className = 'title';
-        title.textContent = cell;
+        title.textContent = prenom;
         header.append(toggle, title);
         sc.append(header);
 
@@ -185,7 +183,7 @@
       casesContainer.append(cont);
     });
 
-    // --- INTERACTIONS, INFRACTIONS, ETC ---
+    // --- INTERACTIONS ---
     document.querySelectorAll('.subcase').forEach(sc => {
       sc.addEventListener('click', e => {
         if (e.target.tagName === 'INPUT') return;
@@ -236,7 +234,7 @@
       const [prenom, rubrique] = li.textContent.split(' : ');
       const opts = detailsOptions[rubrique];
       if (!opts) return;
-      const c = findCaseByPrenom(prenom); // retrouver le numéro de case
+      const c = findCaseByPrenom(prenom);
       const sel = document.createElement('li');
       sel.className = 'detail-select';
       opts.forEach(opt => {
@@ -255,18 +253,26 @@
       li.insertAdjacentElement('afterend', sel);
     });
 
-    // Utilitaires pour retrouver prénom à partir du numéro de case
+    // --- UTILS ---
     function findPrenomByCase(n) {
-      let count = 1;
-      for (const ligne of matrice) for (const nom of ligne)
-        if (nom && nom !== 0 && count++ === parseInt(n)) return nom;
-      return "Case " + n;
+      n = parseInt(n, 10)-1;
+      let count = 0;
+      for (const ligne of matrice)
+        for (const nom of ligne)
+          if (nom !== 0 && nom) {
+            if (count === n) return nom;
+            count++;
+          }
+      return "Case " + (n+1);
     }
     function findCaseByPrenom(prenom) {
       let count = 1;
-      for (const ligne of matrice) for (const nom of ligne)
-        if (nom && nom !== 0 && nom === prenom) return count;
-        else if (nom && nom !== 0) count++;
+      for (const ligne of matrice)
+        for (const nom of ligne)
+          if (nom !== 0 && nom) {
+            if (nom === prenom) return count;
+            count++;
+          }
       return -1;
     }
 
@@ -343,7 +349,7 @@
       };
       document.querySelectorAll('#result-list li:not(.detail-select)').forEach(li => {
         const [prenom, cat] = li.textContent.split(' : ');
-        infractionsByCat[cat]?.push(li.textContent);
+        if (infractionsByCat[cat]) infractionsByCat[cat].push(li.textContent);
       });
       // Présents / absents
       const subs = Array.from(document.querySelectorAll('.subcase'));
