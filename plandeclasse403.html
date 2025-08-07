@@ -30,18 +30,20 @@
       border-radius: 10px;
       font-weight: bold;
       font-size: 1.25em;
-      white-space: nowrap;
       cursor: pointer;
       transition: background-color .3s, color .3s;
       display: flex;
       align-items: center;
       user-select: none;
-      min-width: 60px;
+      min-width: 70px;
+      max-width: 180px;      /* Limite la largeur de la case */
       justify-content: center;
       border: none;
       margin: 0;
       box-sizing: border-box;
       text-align: center;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     .subcase.selected { background: #006400; color: #fff; }
     .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
@@ -50,11 +52,18 @@
       pointer-events: none;
       visibility: hidden;
       border: none;
-      min-width: 60px;
+      min-width: 70px;
     }
-    .header { display: flex; align-items: center; gap: 10px; }
+    .header { display: flex; align-items: center; gap: 10px; width: 100%; }
     .toggle { cursor: pointer; }
-    .title { font-weight: bold; }
+    .title {
+      font-weight: bold;
+      display: inline-block;
+      text-align: center;
+      width: 100%;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
     .options { margin-top: 8px; display: none; padding-left: 4px; }
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 200px; }
     #result-list { list-style: none; padding: 0; margin: 0; }
@@ -102,7 +111,7 @@
     let nbColonnes = 0;
     matrice.forEach(ligne => { if (ligne.length > nbColonnes) nbColonnes = ligne.length; });
     document.getElementById('cases').style.gridTemplateColumns =
-      `repeat(${nbColonnes}, minmax(60px, auto))`;
+      `repeat(${nbColonnes}, minmax(70px, 1fr))`;
 
     // --- Infractions
     const detailsOptions = {
