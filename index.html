@@ -163,6 +163,7 @@
         <div class="sub-dropdown">
           <a href="#">4<sup>e</sup></a>
           <div class="sub-dropdown-content">
+            <!-- Ici le lien 403 déclenche la modale JS -->
             <a href="javascript:void(0)" onclick="showPasswordModal()">403</a>
             <a href="404.html">404</a>
           </div>
@@ -224,7 +225,6 @@
     function toggleDropdown(id) {
       const clicked = document.getElementById(id);
       const wasActive = clicked.classList.contains('active');
-
       document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
       if (!wasActive) clicked.classList.add('active');
     }
@@ -257,7 +257,9 @@
     function showPasswordModal() {
       document.getElementById('passwordModal').style.display = 'flex';
       document.getElementById('passwordInput').value = '';
-      document.getElementById('passwordInput').focus();
+      setTimeout(function(){
+        document.getElementById('passwordInput').focus();
+      },100); // petit délai pour s'assurer que l'input est visible
     }
 
     function validatePassword() {
@@ -268,10 +270,13 @@
       } else {
         alert('Mot de passe incorrect');
         document.getElementById('passwordInput').value = '';
-        document.getElementById('passwordInput').focus();
+        setTimeout(function(){
+          document.getElementById('passwordInput').focus();
+        },100);
       }
     }
 
+    // Valider avec Entrée
     document.getElementById('passwordInput').addEventListener('keydown', function(e) {
       if (e.key === "Enter") validatePassword();
     });
