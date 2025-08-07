@@ -6,26 +6,32 @@
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
-    .cases { display: flex; flex-direction: column; gap: 18px; }
+    .cases {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: flex-start; /* <<--- Clé pour empêcher l’étirement */
+      width: auto;
+    }
     .case-container {
-      display: inline-flex; /* ! clé ! */
+      display: inline-flex; /* <<--- Clé pour que chaque ligne prenne JUSTE la taille des cases */
       background: #87CEEB;
       border-radius: 5px;
       overflow: hidden;
-      margin-bottom: 4px;
+      margin-bottom: 0px;
       gap: 0px;
     }
     .subcase {
-      /* flex: 1;  <-- Surtout PAS ! */
-      padding: 8px 14px;
+      /* PAS de flex: 1 ! */
+      padding: 8px 18px;
       border-right: 1px solid rgba(255,255,255,.7);
       cursor: pointer;
       transition: background-color .3s, color .3s;
-      width: fit-content;          /* S’ajuste au contenu */
+      width: fit-content;
       max-width: 300px;
-      min-width: 40px;
+      min-width: 24px;
       word-break: break-word;
-      white-space: nowrap;         /* NE PAS couper le prénom, sauf très long */
+      white-space: nowrap;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -34,7 +40,7 @@
     }
     .subcase:last-child { border-right: none; }
     .subcase.selected { background: #006400; color: #fff; }
-    .header { display: flex; align-items: center; gap: 6px; }
+    .header { display: flex; align-items: center; gap: 8px; }
     .toggle { cursor: pointer; }
     .title { font-weight: bold; font-size: 1.2em; word-break: break-word; }
     .subcase:empty, .title:empty { display: none !important; }
