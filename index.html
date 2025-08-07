@@ -4,6 +4,44 @@
   <meta charset="UTF-8">
   <title>Accueil</title>
   <style>
+
+<!-- ...ton code HTML principal... -->
+
+<!-- --- Colle ici le code de la modale --- -->
+<div id="passwordModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0008; z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:white; padding:2em; border-radius:1em; box-shadow:0 0 20px #0005; min-width:300px;">
+    <h2>Mot de passe requis</h2>
+    <input type="password" id="passwordInput" placeholder="Mot de passe" style="width:100%;font-size:1.1em;"/>
+    <div style="margin-top:1em; text-align:right;">
+      <button onclick="validatePassword()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Affiche la modale dès que la page se charge
+  document.getElementById('passwordModal').style.display = 'flex';
+
+  function validatePassword() {
+    const pwd = document.getElementById('passwordInput').value;
+    // Change ici le mot de passe à tester
+    if (pwd === 'mon_mot_de_passe') {
+      document.getElementById('passwordModal').style.display = 'none';
+    } else {
+      alert('Mot de passe incorrect');
+    }
+  }
+  // Valide aussi avec Entrée
+  document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+    if (e.key === "Enter") validatePassword();
+  });
+</script>
+<!-- --- Fin du code modale --- -->
+
+</body>
+
+
+    
     body {
       margin: 0;
       font-family: sans-serif;
