@@ -4,22 +4,6 @@
   <meta charset="UTF-8">
   <title>Accueil</title>
   <style>
-
-<div id="passwordModal" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0008; z-index:9999; justify-content:center; align-items:center;">
-  <div style="background:white; padding:2em; border-radius:1em; box-shadow:0 0 20px #0005; min-width:300px;">
-    <h2>Mot de passe requis</h2>
-    <input type="password" id="passwordInput" placeholder="Mot de passe" style="width:100%;font-size:1.1em;"/>
-    <div style="margin-top:1em; text-align:right;">
-      <button onclick="validatePassword()">OK</button>
-    </div>
-  </div>
-</div>
-
-
-</body>
-
-
-    
     body {
       margin: 0;
       font-family: sans-serif;
@@ -125,6 +109,46 @@
     .box-lala:hover {
       background-color: #dcf5dc;
     }
+
+    /* Styles pour la modale de mot de passe */
+    #passwordModal {
+      display: none; 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100vw; 
+      height: 100vh; 
+      background: #0008; 
+      z-index: 9999; 
+      justify-content: center; 
+      align-items: center;
+    }
+    #passwordModal .modal-content {
+      background: white; 
+      padding: 2em; 
+      border-radius: 1em; 
+      box-shadow: 0 0 20px #0005; 
+      min-width: 300px;
+    }
+    #passwordInput {
+      width: 100%;
+      font-size: 1.1em;
+      margin-top: 1em;
+      padding: 0.5em;
+    }
+    #passwordModal button {
+      margin-top: 1em;
+      padding: 0.5em 1.2em;
+      font-size: 1em;
+      border-radius: 0.5em;
+      border: none;
+      background: #1976d2;
+      color: white;
+      cursor: pointer;
+    }
+    #passwordModal button:hover {
+      background: #125199;
+    }
   </style>
 </head>
 <body>
@@ -139,7 +163,7 @@
         <div class="sub-dropdown">
           <a href="#">4<sup>e</sup></a>
           <div class="sub-dropdown-content">
-            <a href="javascript:void(0)" onclick="checkPassword()">403</a>
+            <a href="javascript:void(0)" onclick="showPasswordModal()">403</a>
             <a href="404.html">404</a>
           </div>
         </div>
@@ -178,7 +202,25 @@
     </a>
   </div>
 
+  <!-- MODALE DE MOT DE PASSE -->
+  <div id="passwordModal">
+    <div class="modal-content">
+      <h2>Mot de passe requis</h2>
+      <p>Veuillez saisir le mot de passe pour accéder à la page 403 :</p>
+      <input type="password" id="passwordInput" placeholder="Mot de passe" />
+      <div style="text-align: right;">
+        <button onclick="validatePassword()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="diagramme-1">
+    <h2>Mon diagramme Draw.io #1</h2>
+    <div class="svg-container" data-src="lien.drawio.svg"></div>
+  </section>
+
   <script>
+    // Dropdown menus
     function toggleDropdown(id) {
       const clicked = document.getElementById(id);
       const wasActive = clicked.classList.contains('active');
@@ -201,30 +243,38 @@
       });
     });
 
-    
+    // SVG loader
+    document.querySelectorAll('.svg-container').forEach(container => {
+      fetch(container.dataset.src)
+        .then(res => res.text())
+        .then(svgText => {
+          container.innerHTML = svgText;
+        })
+        .catch(err => console.error('Impossible de charger SVG:', err));
+    });
+
+    // ---- MODALE DE MOT DE PASSE ----
+    function showPasswordModal() {
+      document.getElementById('passwordModal').style.display = 'flex';
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordInput').focus();
+    }
+
+    function validatePassword() {
+      const pwd = document.getElementById('passwordInput').value;
+      if (pwd === '1205') { // <-- Change le mot de passe ici si tu veux !
+        document.getElementById('passwordModal').style.display = 'none';
+        window.location.href = "403.html";
+      } else {
+        alert('Mot de passe incorrect');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+      }
+    }
+
+    document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+      if (e.key === "Enter") validatePassword();
+    });
   </script>
-
-  
-<section id="diagramme-1">
-  <h2>Mon diagramme Draw.io #1</h2>
-  <div class="svg-container" data-src="lien.drawio.svg"></div>
-</section>
-
-<script>
-// Petit script pour charger et injecter le SVG inline,
-// ce qui permet que les <a xlink:href="…"> fonctionnent nativement.
-document.querySelectorAll('.svg-container').forEach(container => {
-  fetch(container.dataset.src)
-    .then(res => res.text())
-    .then(svgText => {
-      container.innerHTML = svgText;
-    })
-    .catch(err => console.error('Impossible de charger SVG:', err));
-});
-</script>
-
-
-
-
 </body>
 </html>
