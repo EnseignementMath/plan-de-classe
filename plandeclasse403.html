@@ -7,7 +7,6 @@
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
     .container { display: flex; gap: 20px; align-items: flex-start; }
-
     .left-panel { display: flex; flex-direction: column; gap: 10px; }
     .lien-box {
       width: 120px; padding: 10px; background-color: #87CEEB;
@@ -17,38 +16,37 @@
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
 
-    /* Grille flexible */
-    .cases {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      align-items: flex-start;
-    }
-    .case-container {
-      display: inline-flex;  /* Pour que chaque ligne prenne la taille de ses cases */
-      background-color: #87CEEB;
-      border-radius: 5px;
-      overflow: hidden;
-    }
+    .cases { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
+    .case-container { display: inline-flex; background: none; }
     .subcase {
       padding: 8px 16px;
-      border-right: 1px solid rgba(255,255,255,.7);
+      margin-right: 3px;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 1.1em;
+      white-space: nowrap;
       cursor: pointer;
       transition: background-color .3s, color .3s;
-      width: fit-content;
-      max-width: 340px;
-      min-width: 24px;
-      word-break: break-word;
-      white-space: nowrap;
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: inherit;
-      box-sizing: border-box;
+      user-select: none;
+      background: #87CEEB;
+      border: none;
     }
-    .subcase:last-child { border-right: none; }
     .subcase.selected { background: #006400; color: #fff; }
     .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
+    .subcase.empty {
+      background: none;
+      pointer-events: none;
+      visibility: hidden;
+      width: 60px;
+      margin-right: 3px;
+      border: none;
+    }
+    .spacer {
+      width: 40px;
+      display: inline-block;
+    }
     .header { display: flex; align-items: center; gap: 8px; }
     .toggle { cursor: pointer; }
     .title { font-weight: bold; }
@@ -58,9 +56,7 @@
     #result-list li { margin-bottom: 5px; cursor: pointer; }
     li.detail-select { padding-left: 20px; margin-bottom: 10px; }
     li.detail-select label { display: block; cursor: pointer; }
-    #controle-result .control-message {
-      text-decoration: underline; margin-top: 10px; font-weight: bold;
-    }
+    #controle-result .control-message { text-decoration: underline; margin-top: 10px; font-weight: bold; }
     .footer-container { text-align: center; margin-top: 30px; }
     .footer-box {
       display: inline-block; padding: 10px 20px;
@@ -69,9 +65,7 @@
   </style>
 </head>
 <body>
-
   <h1>Plan de classe</h1>
-
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -79,37 +73,26 @@
       <div class="lien-box" id="mode-controle-box">Mode contrôle</div>
       <div id="appel-result"></div>
     </div>
-
     <div class="cases" id="cases"></div>
-
     <div class="result">
       <ul id="result-list"></ul>
       <div id="controle-result"></div>
     </div>
   </div>
-
   <div class="footer-container">
     <div class="footer-box">Tableau</div>
   </div>
 
   <script>
-    // --- 1. MATRICE DE PRÉNOMS/LIGNES/COLONNES ---
-    // (chaque sous-tableau = une ligne du plan)
+    // Ex: ["Lucas", "Marc", 0, "Louis"], ["Hamid", "", 0, "Simon", "Louise"]
     const matrice = [
-      ["Aya", "Roumaissa", "Mohamed"],
-      ["Maryam"],
-      ["Merve", "Néhémie"],
-      ["Nemaaly", "Théo"],
-      ["Mathys", "Sheldon"],
-      ["Inahya", "Sam Ismaël"],
-      ["Aissa", "Carlos"],
-      ["Malone", "Raphaël"],
-      ["Nour", "Jilyan","Inès"],
-      ["Ismael", ]
+      ["Aya", "Roumaissa", 0, "Mohamed", "Maryam"],
+      ["Merve", "Néhémie", 0, "Nemaaly", "Théo"],
+      ["Mathys", "Sheldon", 0, "Inahya", "Sam Ismaël"],
+      ["Aissa", "", 0, "Carlos", "Malone"],
+      ["Raphaël", "Nour", 0, "Jilyan", "", 0, "Ismael", "Inès"]
     ];
-    // Adapter la matrice à ton plan exact !
 
-    // --- 2. INFRACTIONS DISPONIBLES ---
     const detailsOptions = {
       "Comportement": [
         "Insulte envers le professeur","Insulte envers un camarade","Insolence",
@@ -128,58 +111,69 @@
       ]
     };
 
-    // --- 3. GÉNÉRATION DE LA GRILLE DE CASES AJUSTÉES ---
+    // Génération de la grille avec séparateurs
     const casesContainer = document.getElementById('cases');
     let num = 1, caseRefs = [];
-    matrice.forEach((ligne, r) => {
+    matrice.forEach(ligne => {
       const cont = document.createElement('div');
       cont.className = 'case-container';
-      ligne.forEach((prenom, c) => {
-        if (!prenom) return;
-        const sc = document.createElement('div');
-        sc.className = 'subcase';
-        sc.dataset.case = num;
-        caseRefs.push(sc);
+      ligne.forEach(cell => {
+        if (cell === 0) {
+          const spacer = document.createElement('div');
+          spacer.className = 'spacer';
+          cont.append(spacer);
+        } else if (cell === "") {
+          const empty = document.createElement('div');
+          empty.className = 'subcase empty';
+          cont.append(empty);
+        } else {
+          const sc = document.createElement('div');
+          sc.className = 'subcase';
+          sc.dataset.case = num;
+          caseRefs.push(sc);
 
-        // entête AVEC le prénom
-        const header = document.createElement('div');
-        header.className = 'header';
-        const toggle = document.createElement('input');
-        toggle.type = 'checkbox';
-        toggle.className = 'toggle';
-        toggle.dataset.case = num;
-        const title = document.createElement('span');
-        title.className = 'title';
-        title.textContent = prenom;
-        header.append(toggle, title);
-        sc.append(header);
+          // entête AVEC le prénom
+          const header = document.createElement('div');
+          header.className = 'header';
+          const toggle = document.createElement('input');
+          toggle.type = 'checkbox';
+          toggle.className = 'toggle';
+          toggle.dataset.case = num;
+          const title = document.createElement('span');
+          title.className = 'title';
+          title.textContent = cell;
+          header.append(toggle, title);
+          sc.append(header);
 
-        // options infractions
-        const opts = document.createElement('div');
-        opts.className = 'options';
-        Object.keys(detailsOptions).forEach(cat => {
-          const lbl = document.createElement('label');
-          const inp = document.createElement('input');
-          inp.type = 'checkbox';
-          inp.dataset.case = num;
-          inp.value = cat;
-          lbl.append(inp, ' ' + cat);
-          opts.append(lbl, document.createElement('br'));
-        });
-        sc.append(opts);
+          // options infractions
+          const opts = document.createElement('div');
+          opts.className = 'options';
+          Object.keys(detailsOptions).forEach(cat => {
+            const lbl = document.createElement('label');
+            const inp = document.createElement('input');
+            inp.type = 'checkbox';
+            inp.dataset.case = num;
+            inp.value = cat;
+            lbl.append(inp, ' ' + cat);
+            opts.append(lbl, document.createElement('br'));
+          });
+          sc.append(opts);
 
-        cont.append(sc);
-        num++;
+          cont.append(sc);
+          num++;
+        }
       });
       casesContainer.append(cont);
     });
 
-    // --- 4. FONCTIONNALITÉS D'INTERACTION ---
+    // Interaction et logique (présence, infractions, export, etc.)
     document.querySelectorAll('.subcase').forEach(sc => {
-      sc.addEventListener('click', e => {
-        if (e.target.tagName === 'INPUT') return;
-        sc.classList.toggle('selected');
-      });
+      if (!sc.classList.contains('empty')) {
+        sc.addEventListener('click', e => {
+          if (e.target.tagName === 'INPUT') return;
+          sc.classList.toggle('selected');
+        });
+      }
     });
     document.querySelectorAll('.toggle').forEach(toggle => {
       toggle.addEventListener('change', function() {
@@ -244,24 +238,29 @@
       li.insertAdjacentElement('afterend', sel);
     });
 
-    // Utilitaires pour retrouver prénom à partir du numéro de case
     function findPrenomByCase(n) {
       let count = 1;
-      for (const ligne of matrice) for (const nom of ligne)
-        if (nom && count++ === parseInt(n)) return nom;
+      for (const ligne of matrice)
+        for (const cell of ligne)
+          if (cell && cell !== 0) {
+            if (count++ === parseInt(n)) return cell;
+          }
       return "Case " + n;
     }
     function findCaseByPrenom(prenom) {
       let count = 1;
-      for (const ligne of matrice) for (const nom of ligne)
-        if (nom && nom === prenom) return count;
-        else if (nom) count++;
+      for (const ligne of matrice)
+        for (const cell of ligne)
+          if (cell && cell !== 0) {
+            if (cell === prenom) return count;
+            count++;
+          }
       return -1;
     }
 
-    // 5) Appel terminé
+    // Appel terminé
     document.getElementById('appel-box').addEventListener('click', () => {
-      const subs = Array.from(document.querySelectorAll('.subcase'));
+      const subs = Array.from(document.querySelectorAll('.subcase:not(.empty)'));
       const pres = subs.filter(sc => sc.classList.contains('selected'));
       const abs  = subs.filter(sc => !sc.classList.contains('selected'));
       let html = `<p>Élèves présents : ${pres.length}</p><p>Élèves absents :</p>`;
@@ -272,7 +271,7 @@
       document.getElementById('appel-result').innerHTML = html;
     });
 
-    // 6) Mode contrôle & rendus
+    // Mode contrôle & rendus
     const rendus = [], nomsRendus = [];
     const modeBtn = document.getElementById('mode-controle-box');
     const controleResult = document.getElementById('controle-result');
@@ -285,7 +284,7 @@
         ? '<p class="control-message">A terminé le contrôle</p>'
         : '';
       if (!modeActive) { rendus.length = 0; nomsRendus.length = 0; }
-      document.querySelectorAll('.subcase').forEach(sc => {
+      document.querySelectorAll('.subcase:not(.empty)').forEach(sc => {
         const c = sc.dataset.case;
         if (modeActive) {
           const span = sc.querySelector('span.title');
@@ -324,9 +323,8 @@
       modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
     });
 
-    // 7) Export JSON pur + nomsRendus=[…] commenté
+    // Export JSON
     document.getElementById('lien-box').addEventListener('click', () => {
-      // Infractions par catégorie
       const infractionsByCat = {
         "Comportement": [], "Travail non fait": [], "Oubli de matériel": []
       };
@@ -334,19 +332,16 @@
         const [prenom, cat] = li.textContent.split(' : ');
         infractionsByCat[cat]?.push(li.textContent);
       });
-      // Présents / absents
-      const subs = Array.from(document.querySelectorAll('.subcase'));
+      const subs = Array.from(document.querySelectorAll('.subcase:not(.empty)'));
       const presents = subs.filter(sc => sc.classList.contains('selected')).length;
       const absents  = subs.filter(sc => !sc.classList.contains('selected'))
                            .map(sc => sc.querySelector('.title').textContent);
-      // Copies dans l'ordre
       const copiesOrdr = [];
       rendus.forEach(o => {
         for (let i = 0; i < o.pages; i++) {
           copiesOrdr.push(findPrenomByCase(o.case));
         }
       });
-      // Horodatage
       const now = new Intl.DateTimeFormat('fr-FR', {
         timeZone:'Europe/Paris',year:'numeric',month:'2-digit',
         day:'2-digit',hour:'2-digit',minute:'2-digit'
@@ -355,7 +350,6 @@
       const [jj,MM] = dp.split('/'), [hh,mm] = tp.split(':');
       const stamp = `${jj}-${MM}-${hh}h${mm}`;
 
-      // Création du JSON
       const output = {
         date: `${stamp} (Europe/Paris)`,
         infractions: infractionsByCat,
@@ -372,16 +366,7 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-
-      /* 
-      nomsRendus=[
-        "Alice",
-        "Benoît",
-        "Chloé"
-      ]
-      */
     });
   </script>
-
 </body>
 </html>
