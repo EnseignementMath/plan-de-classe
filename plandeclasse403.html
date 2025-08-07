@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe ajusté</title>
+  <title>Plan de classe ajusté & interactif</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
@@ -10,11 +10,11 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      align-items: flex-start; /* <<--- Clé pour empêcher l’étirement */
+      align-items: flex-start; /* Empêche l’étirement */
       width: auto;
     }
     .case-container {
-      display: inline-flex; /* <<--- Clé pour que chaque ligne prenne JUSTE la taille des cases */
+      display: inline-flex;
       background: #87CEEB;
       border-radius: 5px;
       overflow: hidden;
@@ -22,13 +22,12 @@
       gap: 0px;
     }
     .subcase {
-      /* PAS de flex: 1 ! */
       padding: 8px 18px;
       border-right: 1px solid rgba(255,255,255,.7);
       cursor: pointer;
       transition: background-color .3s, color .3s;
       width: fit-content;
-      max-width: 300px;
+      max-width: 350px;
       min-width: 24px;
       word-break: break-word;
       white-space: nowrap;
@@ -44,6 +43,12 @@
     .toggle { cursor: pointer; }
     .title { font-weight: bold; font-size: 1.2em; word-break: break-word; }
     .subcase:empty, .title:empty { display: none !important; }
+    .actions { margin: 25px 0 15px 0; }
+    button { font-size: 1.1em; margin-right: 14px; padding: 7px 18px; border-radius: 6px; border: 1px solid #333; background: #eef; cursor: pointer; }
+    button:hover { background: #dde; }
+    #resultat { margin-top: 15px; font-size: 1.13em; }
+    .absent { color: #c00; font-weight: bold; }
+    .present { color: #063; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -51,7 +56,14 @@
 <h1>Plan de classe interactif</h1>
 <div class="cases" id="cases"></div>
 
+<div class="actions">
+  <button onclick="faireAppel()">Appel terminé</button>
+  <button onclick="exporterJSON()">Exporter les absents (.json)</button>
+</div>
+<div id="resultat"></div>
+
 <script>
+// ---- 1. Matrice personnalisée pour l’affichage ----
 const matrice = [
   ["AÏT BOUAOUNE Aya", "Roua"],
   ["Mohamed", "Maryam"],
@@ -65,6 +77,7 @@ const matrice = [
   ["Ismael", "Inès"]
 ];
 
+// ---- 2. Génération de la grille ajustée ----
 function genererPlan() {
   const casesEl = document.getElementById('cases');
   casesEl.innerHTML = '';
@@ -78,35 +91,77 @@ function genererPlan() {
       sc.className = 'subcase';
       sc.dataset.case = num;
 
-      // Titre AVEC le prénom
+      // --- Titre avec prénom + case à cocher ---
       const header = document.createElement('div');
       header.className = 'header';
       const toggle = document.createElement('input');
       toggle.type = 'checkbox';
       toggle.className = 'toggle';
       toggle.dataset.case = num;
+      // Synchronisation case cochée <-> clic sur la case
+      toggle.addEventListener('click', e => {
+        sc.classList.toggle('selected', toggle.checked);
+        e.stopPropagation();
+      });
       const title = document.createElement('span');
       title.className = 'title';
       title.textContent = prenom;
       header.append(toggle, title);
       sc.append(header);
 
+      // --- Click sur toute la case sélectionne/désélectionne ---
+      sc.addEventListener('click', function(e) {
+        if (e.target === toggle) return;
+        sc.classList.toggle('selected');
+        toggle.checked = sc.classList.contains('selected');
+      });
+
       cont.append(sc);
       num++;
     });
     casesEl.append(cont);
   });
-
-  // Sélection de présence
-  document.querySelectorAll('.subcase').forEach(sc => {
-    sc.addEventListener('click', e => {
-      if (e.target.tagName === 'INPUT') return;
-      sc.classList.toggle('selected');
-    });
-  });
 }
 
 genererPlan();
+
+// ---- 3. Appel terminé (présents/absents) ----
+function faireAppel() {
+  const presents = [];
+  const absents = [];
+  document.querySelectorAll('.subcase').forEach(sc => {
+    const nom = sc.querySelector('.title').textContent;
+    if (sc.classList.contains('selected')) presents.push(nom);
+    else absents.push(nom);
+  });
+  document.getElementById('resultat').innerHTML =
+    `<span class="present">Présents :</span> ${presents.join(', ') || "Aucun"}<br>
+     <span class="absent">Absents :</span> ${absents.join(', ') || "Aucun"}`;
+}
+
+// ---- 4. Export absents en JSON (date et ordre d’appel) ----
+function exporterJSON() {
+  const absents = [];
+  document.querySelectorAll('.subcase').forEach(sc => {
+    if (!sc.classList.contains('selected')) {
+      absents.push(sc.querySelector('.title').textContent);
+    }
+  });
+  const now = new Date();
+  const data = {
+    date: now.toLocaleString(),
+    absents: absents,
+    "ordre_plan": matrice.flat().filter(Boolean)
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'absents_plan_classe.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 </script>
 
 </body>
