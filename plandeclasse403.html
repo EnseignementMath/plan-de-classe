@@ -2,12 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe aligné</title>
+  <title>Plan de classe aligné largeur auto</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
     .container { display: flex; gap: 20px; align-items: flex-start; }
-
     .left-panel { display: flex; flex-direction: column; gap: 10px; }
     .lien-box {
       width: 120px; padding: 10px; background-color: #87CEEB;
@@ -17,16 +16,18 @@
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
 
+    /* Grille alignée et colonnes auto-larges */
     .cases {
       display: grid;
       gap: 18px;
-      /* sera adapté dynamiquement */
+      /* Colonnes auto-ajustées à la largeur du contenu le plus large de chaque colonne */
+      /* Dynamisé en JS */
       justify-content: start;
       margin-bottom: 30px;
     }
     .subcase {
       background: #87CEEB;
-      padding: 10px 20px;
+      padding: 10px 24px;
       border-radius: 10px;
       font-weight: bold;
       font-size: 1.25em;
@@ -35,15 +36,10 @@
       display: flex;
       align-items: center;
       user-select: none;
-      min-width: 70px;
-      max-width: 180px;      /* Limite la largeur de la case */
-      justify-content: center;
       border: none;
       margin: 0;
       box-sizing: border-box;
       text-align: center;
-      overflow-wrap: break-word;
-      word-break: break-word;
     }
     .subcase.selected { background: #006400; color: #fff; }
     .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
@@ -52,7 +48,6 @@
       pointer-events: none;
       visibility: hidden;
       border: none;
-      min-width: 70px;
     }
     .header { display: flex; align-items: center; gap: 10px; width: 100%; }
     .toggle { cursor: pointer; }
@@ -60,9 +55,7 @@
       font-weight: bold;
       display: inline-block;
       text-align: center;
-      width: 100%;
-      overflow-wrap: break-word;
-      word-break: break-word;
+      white-space: nowrap;   /* <-- NE PAS COUPER */
     }
     .options { margin-top: 8px; display: none; padding-left: 4px; }
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 200px; }
@@ -79,7 +72,7 @@
   </style>
 </head>
 <body>
-  <h1>Plan de classe aligné</h1>
+  <h1>Plan de classe aligné largeur auto</h1>
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -98,7 +91,7 @@
   </div>
 
   <script>
-    // Matrice : 0 = espace (séparateur table), "" = vide, reste = prénom
+    // Matrice (0 = espace/table, "" = vide, prénom sinon)
     const matrice = [
       ["Aya", "Roumaissa", 0, "Mohamed", "Maryam"],
       ["Merve", "Néhémie", 0, "Nemaaly", "Théo"],
@@ -110,8 +103,9 @@
     // Adapter dynamiquement le nombre de colonnes de la grille CSS
     let nbColonnes = 0;
     matrice.forEach(ligne => { if (ligne.length > nbColonnes) nbColonnes = ligne.length; });
+    // Colonnes auto-larges selon le contenu
     document.getElementById('cases').style.gridTemplateColumns =
-      `repeat(${nbColonnes}, minmax(70px, 1fr))`;
+      `repeat(${nbColonnes}, max-content)`;
 
     // --- Infractions
     const detailsOptions = {
