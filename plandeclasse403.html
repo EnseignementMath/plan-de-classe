@@ -91,7 +91,18 @@
   </div>
 
   <script>
-    // 1) Infractions disponibles
+    // 1) Liste des noms pour les cases (30 élèves ici, adapte à ta classe !)
+    const noms = [
+      "Alice", "Benoît", "Chloé", "David", "Emma",
+      "Farid", "Gabrielle", "Hugo", "Inès", "Jules",
+      "Karim", "Lina", "Mathis", "Nina", "Omar",
+      "Paul", "Quentin", "Rania", "Sarah", "Thomas",
+      "Ugo", "Valentine", "William", "Xavier", "Yasmine",
+      "Zoé", "Axel", "Bruno", "Clara", "Diane"
+    ];
+    // Tu peux bien sûr personnaliser l’ordre, les noms, etc.
+
+    // 2) Infractions disponibles
     const detailsOptions = {
       "Comportement": [
         "Insulte envers le professeur","Insulte envers un camarade","Insolence",
@@ -110,7 +121,7 @@
       ]
     };
 
-    // 2) Génération de la grille 3×5×2 = 30 sous-cases
+    // 3) Génération de la grille 3×5×2 = 30 sous-cases avec noms personnalisés
     const casesContainer = document.getElementById('cases');
     let num = 1;
     for (let r = 0; r < 5; r++) {
@@ -122,7 +133,7 @@
           sc.className = 'subcase';
           sc.dataset.case = num;
 
-          // entête
+          // entête avec le prénom
           const header = document.createElement('div');
           header.className = 'header';
           const toggle = document.createElement('input');
@@ -131,7 +142,7 @@
           toggle.dataset.case = num;
           const title = document.createElement('span');
           title.className = 'title';
-          title.textContent = `Case ${num}`;
+          title.textContent = noms[num-1] || `Case ${num}`;
           header.append(toggle, title);
           sc.append(header);
 
@@ -156,7 +167,7 @@
       }
     }
 
-    // 3) Sélection et infractions
+    // 4) Sélection et infractions
     document.querySelectorAll('.subcase').forEach(sc => {
       sc.addEventListener('click', e => {
         if (e.target.tagName === 'INPUT') return;
@@ -188,7 +199,7 @@
       if (!document.getElementById(id)) {
         const li = document.createElement('li');
         li.id = id;
-        li.textContent = `case n°${c} : ${v}`;
+        li.textContent = `${noms[c-1] || "Case " + c} : ${v}`;
         resultList.append(li);
       }
     }
@@ -204,10 +215,10 @@
       if (li.tagName !== 'LI' || li.classList.contains('detail-select')) return;
       const prev = resultList.querySelector('.detail-select');
       if (prev) prev.remove();
-      const [, rubrique] = li.textContent.split(' : ');
+      const [prenom, rubrique] = li.textContent.split(' : ');
       const opts = detailsOptions[rubrique];
       if (!opts) return;
-      const c = li.id.split('-')[1];
+      const c = noms.indexOf(prenom) + 1; // retrouver l'index
       const sel = document.createElement('li');
       sel.className = 'detail-select';
       opts.forEach(opt => {
@@ -218,7 +229,7 @@
         sel.append(lbl, document.createElement('br'));
         cb.addEventListener('change', () => {
           if (cb.checked) {
-            li.textContent = `case n°${c} : ${rubrique} : ${opt}`;
+            li.textContent = `${prenom} : ${rubrique} : ${opt}`;
             sel.remove();
           }
         });
@@ -226,19 +237,21 @@
       li.insertAdjacentElement('afterend', sel);
     });
 
-    // 4) Appel terminé
+    // 5) Appel terminé
     document.getElementById('appel-box').addEventListener('click', () => {
       const subs = Array.from(document.querySelectorAll('.subcase'));
       const pres = subs.filter(sc => sc.classList.contains('selected'));
       const abs  = subs.filter(sc => !sc.classList.contains('selected'));
       let html = `<p>Élèves présents : ${pres.length}</p><p>Élèves absents :</p>`;
-      if (abs.length) abs.forEach(sc => html += `<p>case n°${sc.dataset.case}</p>`);
+      if (abs.length) abs.forEach(sc => {
+        html += `<p>${noms[sc.dataset.case-1] || "Case " + sc.dataset.case}</p>`;
+      });
       else html += `<p>—</p>`;
       document.getElementById('appel-result').innerHTML = html;
     });
 
-    // 5) Mode contrôle & rendus
-    const rendus = [], noms = [];
+    // 6) Mode contrôle & rendus
+    const rendus = [], nomsRendus = [];
     const modeBtn = document.getElementById('mode-controle-box');
     const controleResult = document.getElementById('controle-result');
     let modeActive = false;
@@ -249,29 +262,29 @@
       controleResult.innerHTML = modeActive
         ? '<p class="control-message">A terminé le contrôle</p>'
         : '';
-      if (!modeActive) { rendus.length = 0; noms.length = 0; }
+      if (!modeActive) { rendus.length = 0; nomsRendus.length = 0; }
       document.querySelectorAll('.subcase').forEach(sc => {
         const c = sc.dataset.case;
         if (modeActive) {
           const span = sc.querySelector('span.title');
           if (!span) return;
           const a = document.createElement('a');
-          a.href = '#'; a.textContent = `Case ${c}`; a.className = 'title-link';
+          a.href = '#'; a.textContent = noms[c-1] || `Case ${c}`; a.className = 'title-link';
           a.addEventListener('click', e => {
             e.stopPropagation();
             const line = document.createElement('p');
-            line.innerHTML = `Case ${c} : page : <input type="number" min="1">`;
+            line.innerHTML = `${noms[c-1] || `Case ${c}`} : page : <input type="number" min="1">`;
             controleResult.append(line);
             const input = line.querySelector('input');
             input.focus();
             input.addEventListener('keydown', evt => {
               if (evt.key === 'Enter') {
                 const pages = parseInt(input.value, 10) || 0;
-                line.textContent = `Case ${c} : page : ${pages}`;
+                line.textContent = `${noms[c-1] || `Case ${c}`} : page : ${pages}`;
                 sc.classList.add('completed');
                 rendus.push({ case: c, pages });
                 for (let i = 0; i < pages; i++) {
-                  noms.push(`Case n°${c}`);
+                  nomsRendus.push(noms[c-1] || `Case ${c}`);
                 }
               }
             });
@@ -282,37 +295,37 @@
           if (!link) return;
           const span = document.createElement('span');
           span.className = 'title';
-          span.textContent = `Case ${c}`;
+          span.textContent = noms[c-1] || `Case ${c}`;
           link.replaceWith(span);
         }
       });
       modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
     });
 
-    // 6) Export JSON pur + noms=[…] commenté
+    // 7) Export JSON pur + nomsRendus=[…] commenté
     document.getElementById('lien-box').addEventListener('click', () => {
       // Infractions par catégorie
       const infractionsByCat = {
         "Comportement": [], "Travail non fait": [], "Oubli de matériel": []
       };
       document.querySelectorAll('#result-list li:not(.detail-select)').forEach(li => {
-        const [_, cat] = li.textContent.split(' : ');
+        const [prenom, cat] = li.textContent.split(' : ');
         infractionsByCat[cat].push(li.textContent);
       });
       // Présents / absents
       const subs = Array.from(document.querySelectorAll('.subcase'));
       const presents = subs.filter(sc => sc.classList.contains('selected')).length;
       const absents  = subs.filter(sc => !sc.classList.contains('selected'))
-                           .map(sc => `case n°${sc.dataset.case}`);
+                           .map(sc => noms[sc.dataset.case-1] || `Case ${sc.dataset.case}`);
       // Copies dans l'ordre
       const copiesOrdr = [];
       rendus.forEach(o => {
         for (let i = 0; i < o.pages; i++) {
-          copiesOrdr.push(`Case n°${o.case}`);
+          copiesOrdr.push(noms[o.case-1] || `Case ${o.case}`);
         }
       });
       // Horodatage
-      const now = new Intl.DateTimeFormat('fr-FR',{
+      const now = new Intl.DateTimeFormat('fr-FR', {
         timeZone:'Europe/Paris',year:'numeric',month:'2-digit',
         day:'2-digit',hour:'2-digit',minute:'2-digit'
       }).format(new Date()).replace(',','');
@@ -339,10 +352,10 @@
       URL.revokeObjectURL(url);
 
       /* 
-      noms=[
-        "Case n°2",
-        "Case n°3",
-        "Case n°3"
+      nomsRendus=[
+        "Alice",
+        "Benoît",
+        "Chloé"
       ]
       */
     });
