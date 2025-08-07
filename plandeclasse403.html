@@ -2,11 +2,12 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe aligné largeur auto</title>
+  <title>Plan de classe - Espaces larges sur 0</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
     .container { display: flex; gap: 20px; align-items: flex-start; }
+
     .left-panel { display: flex; flex-direction: column; gap: 10px; }
     .lien-box {
       width: 120px; padding: 10px; background-color: #87CEEB;
@@ -16,63 +17,75 @@
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
 
-    /* Grille alignée et colonnes auto-larges */
     .cases {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 18px;
-      /* Colonnes auto-ajustées à la largeur du contenu le plus large de chaque colonne */
-      /* Dynamisé en JS */
-      justify-content: start;
-      margin-bottom: 30px;
+      align-items: flex-start;
+    }
+    .case-container {
+      display: flex;
+      flex-direction: row;
+      gap: 18px;
+      margin-bottom: 6px;
     }
     .subcase {
+      padding: 16px 30px;
+      border-radius: 22px;
       background: #87CEEB;
-      padding: 10px 24px;
-      border-radius: 10px;
       font-weight: bold;
-      font-size: 1.25em;
-      cursor: pointer;
-      transition: background-color .3s, color .3s;
+      font-size: 2em;
       display: flex;
       align-items: center;
-      user-select: none;
-      border: none;
+      white-space: nowrap;
       margin: 0;
-      box-sizing: border-box;
-      text-align: center;
+      border: none;
+      box-shadow: none;
+      gap: 10px;
+      transition: background .2s, color .2s;
     }
     .subcase.selected { background: #006400; color: #fff; }
     .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
-    .subcase.empty, .spacer {
-      background: none;
-      pointer-events: none;
-      visibility: hidden;
-      border: none;
-    }
-    .header { display: flex; align-items: center; gap: 10px; width: 100%; }
-    .toggle { cursor: pointer; }
-    .title {
-      font-weight: bold;
-      display: inline-block;
-      text-align: center;
-      white-space: nowrap;   /* <-- NE PAS COUPER */
-    }
+    .header { display: flex; align-items: center; gap: 10px; }
+    .toggle { cursor: pointer; width: 32px; height: 32px; }
+    .title { font-weight: bold; }
     .options { margin-top: 8px; display: none; padding-left: 4px; }
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 200px; }
     #result-list { list-style: none; padding: 0; margin: 0; }
     #result-list li { margin-bottom: 5px; cursor: pointer; }
     li.detail-select { padding-left: 20px; margin-bottom: 10px; }
     li.detail-select label { display: block; cursor: pointer; }
-    #controle-result .control-message { text-decoration: underline; margin-top: 10px; font-weight: bold; }
+    #controle-result .control-message {
+      text-decoration: underline; margin-top: 10px; font-weight: bold;
+    }
     .footer-container { text-align: center; margin-top: 30px; }
     .footer-box {
       display: inline-block; padding: 10px 20px;
       border: 2px solid #000; border-radius: 5px; font-weight: bold;
     }
+    .spacer {
+      display: inline-block;
+      width: 70px;      /* ←←← AJUSTE CETTE VALEUR POUR LA LARGEUR DE L’ESPACE */
+      min-width: 70px;
+      max-width: 140px;
+      height: 10px;     /* invisible mais garde la ligne */
+      background: none !important;
+      border: none !important;
+      pointer-events: none !important;
+      box-shadow: none !important;
+      visibility: visible; /* doit rester visible pour créer l’espace */
+      margin: 0 10px;
+    }
+    @media (max-width: 650px) {
+      .subcase { font-size: 1.15em; padding: 8px 10px; }
+      .spacer { width: 28px; min-width: 28px; }
+    }
   </style>
 </head>
 <body>
-  <h1>Plan de classe aligné largeur auto</h1>
+
+  <h1>Plan de classe</h1>
+
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -80,34 +93,32 @@
       <div class="lien-box" id="mode-controle-box">Mode contrôle</div>
       <div id="appel-result"></div>
     </div>
+
     <div class="cases" id="cases"></div>
+
     <div class="result">
       <ul id="result-list"></ul>
       <div id="controle-result"></div>
     </div>
   </div>
+
   <div class="footer-container">
     <div class="footer-box">Tableau</div>
   </div>
 
   <script>
-    // Matrice (0 = espace/table, "" = vide, prénom sinon)
+    // === MATRICE AVEC ZÉROS POUR LES ESPACES ===
     const matrice = [
-      ["Aya", "Roumaissa", 0, "Mohamed", "Maryam"],
-      ["Merve", "Néhémie", 0, "Nemaaly", "Théo"],
+      ["Aya", 0, "Roumaissa"],
+      ["Merve", 0, "Néhémie"],
       ["Mathys", "Sheldon", 0, "Inahya", "Sam Ismaël"],
-      ["Aissa", "", 0, "Carlos", "Malone"],
-      ["Raphaël", "Nour", 0, "Jilyan", "", 0, "Ismael", "Inès"]
+      [0, "Aissa", "Carlos", "Malone"],
+      ["Raphaël", "Nour", 0, "Jilyan"],
+      [0, "Ismael", 0, "Inès"]
     ];
+    // Mets ta matrice personnalisée ici.
 
-    // Adapter dynamiquement le nombre de colonnes de la grille CSS
-    let nbColonnes = 0;
-    matrice.forEach(ligne => { if (ligne.length > nbColonnes) nbColonnes = ligne.length; });
-    // Colonnes auto-larges selon le contenu
-    document.getElementById('cases').style.gridTemplateColumns =
-      `repeat(${nbColonnes}, max-content)`;
-
-    // --- Infractions
+    // INFRACTIONS DISPONIBLES
     const detailsOptions = {
       "Comportement": [
         "Insulte envers le professeur","Insulte envers un camarade","Insolence",
@@ -126,68 +137,65 @@
       ]
     };
 
-    // --- Grille alignée et toutes fonctionnalités ---
+    // -- GÉNÉRATION DE LA GRILLE --
     const casesContainer = document.getElementById('cases');
-    let num = 1, caseRefs = [];
-    matrice.forEach(ligne => {
-      for (let i = 0; i < nbColonnes; i++) {
-        const cell = ligne[i];
-        if (cell === undefined) {
-          const empty = document.createElement('div');
-          empty.className = 'subcase empty';
-          casesContainer.append(empty);
-        } else if (cell === 0) {
+    let num = 1;
+    matrice.forEach((ligne, r) => {
+      const cont = document.createElement('div');
+      cont.className = 'case-container';
+      ligne.forEach((cell, c) => {
+        if (cell === 0) {
+          // ESPACE LARGE
           const spacer = document.createElement('div');
           spacer.className = 'spacer';
-          casesContainer.append(spacer);
-        } else if (cell === "") {
-          const empty = document.createElement('div');
-          empty.className = 'subcase empty';
-          casesContainer.append(empty);
-        } else {
-          const sc = document.createElement('div');
-          sc.className = 'subcase';
-          sc.dataset.case = num;
-          caseRefs.push(sc);
-
-          // entête AVEC le prénom
-          const header = document.createElement('div');
-          header.className = 'header';
-          const toggle = document.createElement('input');
-          toggle.type = 'checkbox';
-          toggle.className = 'toggle';
-          toggle.dataset.case = num;
-          const title = document.createElement('span');
-          title.className = 'title';
-          title.textContent = cell;
-          header.append(toggle, title);
-          sc.append(header);
-
-          // options infractions
-          const opts = document.createElement('div');
-          opts.className = 'options';
-          Object.keys(detailsOptions).forEach(cat => {
-            const lbl = document.createElement('label');
-            const inp = document.createElement('input');
-            inp.type = 'checkbox';
-            inp.dataset.case = num;
-            inp.value = cat;
-            lbl.append(inp, ' ' + cat);
-            opts.append(lbl, document.createElement('br'));
-          });
-          sc.append(opts);
-
-          sc.addEventListener('click', e => {
-            if (e.target.tagName === 'INPUT') return;
-            sc.classList.toggle('selected');
-          });
-          casesContainer.append(sc);
-          num++;
+          cont.append(spacer);
+          return;
         }
-      }
+        if (!cell) return;
+        const sc = document.createElement('div');
+        sc.className = 'subcase';
+        sc.dataset.case = num;
+
+        // header/prénom + checkbox
+        const header = document.createElement('div');
+        header.className = 'header';
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.className = 'toggle';
+        toggle.dataset.case = num;
+        const title = document.createElement('span');
+        title.className = 'title';
+        title.textContent = cell;
+        header.append(toggle, title);
+        sc.append(header);
+
+        // options infractions
+        const opts = document.createElement('div');
+        opts.className = 'options';
+        Object.keys(detailsOptions).forEach(cat => {
+          const lbl = document.createElement('label');
+          const inp = document.createElement('input');
+          inp.type = 'checkbox';
+          inp.dataset.case = num;
+          inp.value = cat;
+          lbl.append(inp, ' ' + cat);
+          opts.append(lbl, document.createElement('br'));
+        });
+        sc.append(opts);
+
+        cont.append(sc);
+        num++;
+      });
+      casesContainer.append(cont);
     });
 
-    // --- Fonctions interaction ---
+    // --- INTERACTIONS, INFRACTIONS, ETC ---
+    document.querySelectorAll('.subcase').forEach(sc => {
+      sc.addEventListener('click', e => {
+        if (e.target.tagName === 'INPUT') return;
+        sc.classList.toggle('selected');
+      });
+    });
     document.querySelectorAll('.toggle').forEach(toggle => {
       toggle.addEventListener('change', function() {
         const sc = this.closest('.subcase');
@@ -251,29 +259,24 @@
       li.insertAdjacentElement('afterend', sel);
     });
 
+    // Utilitaires pour retrouver prénom à partir du numéro de case
     function findPrenomByCase(n) {
       let count = 1;
-      for (const ligne of matrice)
-        for (const cell of ligne)
-          if (cell && cell !== 0) {
-            if (count++ === parseInt(n)) return cell;
-          }
+      for (const ligne of matrice) for (const nom of ligne)
+        if (nom && nom !== 0 && count++ === parseInt(n)) return nom;
       return "Case " + n;
     }
     function findCaseByPrenom(prenom) {
       let count = 1;
-      for (const ligne of matrice)
-        for (const cell of ligne)
-          if (cell && cell !== 0) {
-            if (cell === prenom) return count;
-            count++;
-          }
+      for (const ligne of matrice) for (const nom of ligne)
+        if (nom && nom !== 0 && nom === prenom) return count;
+        else if (nom && nom !== 0) count++;
       return -1;
     }
 
-    // Appel terminé
+    // 5) Appel terminé
     document.getElementById('appel-box').addEventListener('click', () => {
-      const subs = Array.from(document.querySelectorAll('.subcase:not(.empty)'));
+      const subs = Array.from(document.querySelectorAll('.subcase'));
       const pres = subs.filter(sc => sc.classList.contains('selected'));
       const abs  = subs.filter(sc => !sc.classList.contains('selected'));
       let html = `<p>Élèves présents : ${pres.length}</p><p>Élèves absents :</p>`;
@@ -284,7 +287,7 @@
       document.getElementById('appel-result').innerHTML = html;
     });
 
-    // Mode contrôle & rendus
+    // 6) Mode contrôle & rendus
     const rendus = [], nomsRendus = [];
     const modeBtn = document.getElementById('mode-controle-box');
     const controleResult = document.getElementById('controle-result');
@@ -297,7 +300,7 @@
         ? '<p class="control-message">A terminé le contrôle</p>'
         : '';
       if (!modeActive) { rendus.length = 0; nomsRendus.length = 0; }
-      document.querySelectorAll('.subcase:not(.empty)').forEach(sc => {
+      document.querySelectorAll('.subcase').forEach(sc => {
         const c = sc.dataset.case;
         if (modeActive) {
           const span = sc.querySelector('span.title');
@@ -336,8 +339,9 @@
       modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
     });
 
-    // Export JSON
+    // 7) Export JSON pur + nomsRendus=[…] commenté
     document.getElementById('lien-box').addEventListener('click', () => {
+      // Infractions par catégorie
       const infractionsByCat = {
         "Comportement": [], "Travail non fait": [], "Oubli de matériel": []
       };
@@ -345,16 +349,19 @@
         const [prenom, cat] = li.textContent.split(' : ');
         infractionsByCat[cat]?.push(li.textContent);
       });
-      const subs = Array.from(document.querySelectorAll('.subcase:not(.empty)'));
+      // Présents / absents
+      const subs = Array.from(document.querySelectorAll('.subcase'));
       const presents = subs.filter(sc => sc.classList.contains('selected')).length;
       const absents  = subs.filter(sc => !sc.classList.contains('selected'))
                            .map(sc => sc.querySelector('.title').textContent);
+      // Copies dans l'ordre
       const copiesOrdr = [];
       rendus.forEach(o => {
         for (let i = 0; i < o.pages; i++) {
           copiesOrdr.push(findPrenomByCase(o.case));
         }
       });
+      // Horodatage
       const now = new Intl.DateTimeFormat('fr-FR', {
         timeZone:'Europe/Paris',year:'numeric',month:'2-digit',
         day:'2-digit',hour:'2-digit',minute:'2-digit'
@@ -363,6 +370,7 @@
       const [jj,MM] = dp.split('/'), [hh,mm] = tp.split(':');
       const stamp = `${jj}-${MM}-${hh}h${mm}`;
 
+      // Création du JSON
       const output = {
         date: `${stamp} (Europe/Paris)`,
         infractions: infractionsByCat,
@@ -379,7 +387,16 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+
+      /* 
+      nomsRendus=[
+        "Alice",
+        "Benoît",
+        "Chloé"
+      ]
+      */
     });
   </script>
+
 </body>
 </html>
