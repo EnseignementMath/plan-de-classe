@@ -6,22 +6,8 @@
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1 { text-align: center; margin-bottom: 30px; }
-    .container { display: flex; gap: 20px; align-items: flex-start; }
-
-    /* Zone liste élèves */
-    #input-eleves { font-size: 1.1em; margin-bottom: 5px; }
-    button { margin-left: 8px; font-size: 1.1em; }
-
-    /* Grille */
-    .cases {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .case-container {
-      display: flex; background-color: #87CEEB;
-      border-radius: 5px; overflow: hidden; margin-bottom: 0px;
-    }
+    .cases { display: flex; flex-direction: column; gap: 18px; }
+    .case-container { display: flex; background: #87CEEB; border-radius: 5px; overflow: hidden; }
     .subcase {
       flex: 1;
       padding: 8px;
@@ -43,52 +29,46 @@
     .header { display: flex; align-items: center; gap: 6px; }
     .toggle { cursor: pointer; }
     .title { font-weight: bold; font-size: 1.2em; word-break: break-word; }
-
-    /* Pour masquage des cases vides éventuelles */
     .subcase:empty, .title:empty { display: none !important; }
   </style>
 </head>
 <body>
 
 <h1>Plan de classe interactif</h1>
-
-<div style="margin-bottom:20px;">
-  <label>Colle ta liste d’élèves :<br>
-    <small>(Chaque ligne = une rangée, prénoms/prénoms séparés par espace ou tabulation)</small>
-  </label><br>
-  <textarea id="input-eleves" rows="5" cols="40" placeholder="ex :&#10;Ninon Rudy&#10;Estelle Marc"></textarea>
-  <button onclick="genererPlan()">Générer le plan</button>
-</div>
-
 <div class="cases" id="cases"></div>
 
 <script>
+// Déclare ta matrice ici (exemple)
+const matrice = [
+  ["AÏT BOUAOUNE Aya", "Roua"],
+  ["Mohamed", "Maryam"],
+  ["Merve", "Néhémie"],
+  ["Nemaaly", "Théo"],
+  ["Mathys", "Sheldon"],
+  ["Inahya", "Sam Ismaël"],
+  ["Aissa", "Carlos"],
+  ["Malone", "Raphaël"],
+  ["Nour", "Jilyan"],
+  ["Ismael", "Inès"]
+];
+// Tu peux mettre autant de lignes et de colonnes que tu veux !
+// Exemple simple : const matrice = [["Ninon","Rudy"],["Estelle","Marc"]];
+
+// Génération automatique de la grille
 function genererPlan() {
-  // Lire le contenu du textarea
-  const texte = document.getElementById('input-eleves').value.trim();
-  if (!texte) {
-    document.getElementById('cases').innerHTML = "";
-    return;
-  }
-  // Nettoyer la grille précédente
-  document.getElementById('cases').innerHTML = "";
-
-  // On sépare les lignes
-  const lignes = texte.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  // Pour chaque ligne, on sépare les prénoms (par espace ou tabulation)
-  const plan = lignes.map(l => l.split(/\s+|\t+/));
-
+  const casesEl = document.getElementById('cases');
+  casesEl.innerHTML = '';
   let num = 1;
-  plan.forEach(ligne => {
+  matrice.forEach(ligne => {
     const cont = document.createElement('div');
     cont.className = 'case-container';
     ligne.forEach(prenom => {
-      if (!prenom) return; // Ne crée pas de case vide
+      if (!prenom) return; // saute les cases vides
       const sc = document.createElement('div');
       sc.className = 'subcase';
       sc.dataset.case = num;
 
-      // entête AVEC le prénom (jamais "Case X")
+      // Titre AVEC le prénom
       const header = document.createElement('div');
       header.className = 'header';
       const toggle = document.createElement('input');
@@ -104,7 +84,7 @@ function genererPlan() {
       cont.append(sc);
       num++;
     });
-    document.getElementById('cases').append(cont);
+    casesEl.append(cont);
   });
 
   // Ajoute la sélection de présence
@@ -116,20 +96,7 @@ function genererPlan() {
   });
 }
 
-// Exemple de plan affiché au chargement :
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('input-eleves').value = `AÏT_BOUAOUNE_Aya Roua
-Mohamed Maryam
-Merve Néhémie
-Nemaaly Théo
-Mathys Sheldon
-Inahya Sam_Ismaël
-Aissa Carlos
-Malone Raphaël
-Nour Jilyan
-Ismael Inès`;
-  genererPlan();
-});
+genererPlan();
 </script>
 
 </body>
