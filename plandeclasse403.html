@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Salle 209</title>
+  <title>Plan de classe libre</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body { font-family: sans-serif; margin: 0; background: #f3f8fc; }
     h1 { text-align: center; margin-top: 20px; }
@@ -20,9 +21,6 @@
       position: relative;
       width: 980px;
       min-height: 560px;
-      /* Suppression du fond bleu et de la bordure */
-      /* border: 2px solid #bbb; */
-      /* background: #e6f7ff; */
       border-radius: 12px;
       margin: 0 18px 0 0;
       overflow: visible;
@@ -60,7 +58,6 @@
       min-width: 145px; max-width: 180px; padding: 9px 7px 9px 7px;
       border: 1px solid #aaa; z-index: 1010;
     }
-    /* Lisibilité menu options même carte verte */
     .student-card .options,
     .student-card .options label,
     .student-card .options input[type="checkbox"] {
@@ -146,7 +143,6 @@ const modeBtn = document.getElementById('mode-controle-box');
 const controleResult = document.getElementById('controle-result');
 const appelResult = document.getElementById('appel-result');
 
-// --- RESET & INIT
 function resetAll() {
   positions = {};
   stateAppel = {};
@@ -165,37 +161,8 @@ function resetAll() {
 }
 resetAll();
 
-// Drag & drop (centralisé)
-let drag = { active: false, nom: null, node: null, offset: {x:0, y:0}, startX: 0, startY: 0 };
-function dragStart(e, sc, nom, pointer) {
-  drag.active = true; drag.nom = nom; drag.node = sc;
-  sc.classList.add('dragging');
-  drag.startX = pointer.clientX; drag.startY = pointer.clientY;
-  drag.offset.x = pointer.clientX - sc.offsetLeft;
-  drag.offset.y = pointer.clientY - sc.offsetTop;
-  document.body.style.overflow = "hidden";
-}
-function dragMove(pointer) {
-  if (!drag.active) return;
-  let nx = pointer.clientX - drag.offset.x;
-  let ny = pointer.clientY - drag.offset.y;
-  drag.node.style.left = nx + "px";
-  drag.node.style.top = ny + "px";
-}
-function dragEnd(pointer) {
-  if (!drag.active) return;
-  let nx = pointer.clientX - drag.offset.x;
-  let ny = pointer.clientY - drag.offset.y;
-  positions[drag.nom] = { x: nx, y: ny };
-  drag.node.classList.remove('dragging');
-  document.body.style.overflow = "";
-  // Sélection simple si quasi pas bougé
-  if (Math.abs(pointer.clientX - drag.startX) < 5 && Math.abs(pointer.clientY - drag.startY) < 5) {
-    stateAppel[drag.nom] = !stateAppel[drag.nom];
-    drag.node.classList.toggle('selected', stateAppel[drag.nom]);
-  }
-  drag.active = false; drag.nom = null; drag.node = null;
-}
+// --- DRAG & TAP : la sélection se fait sur TOUT tap/clic rapide, drag si déplacement
+let drag = { active: false, nom: null, node: null, offset: {x:0, y:0}, startX: 0, startY: 0, moved: false };
 
 function renderAll() {
   freeArea.innerHTML = '';
@@ -229,28 +196,102 @@ function renderAll() {
     });
     freeArea.appendChild(sc);
 
-    // --- DRAG PC & MOBILE
+    // --- PC : clic simple -> sélection, drag si déplacement
     sc.addEventListener('mousedown', function(e) {
       if(e.button!==0) return;
-      dragStart(e, sc, nom, e);
+      drag.active = true; drag.nom = nom; drag.node = sc;
+      drag.startX = e.clientX; drag.startY = e.clientY; drag.moved = false;
+      drag.offset = { x: e.clientX - sc.offsetLeft, y: e.clientY - sc.offsetTop };
+      document.body.style.userSelect = "none";
+      document.body.style.overflow = "hidden";
     });
-    sc.addEventListener('touchstart', function(e) {
-      if(e.touches.length > 1) return;
-      dragStart(e, sc, nom, e.touches[0]);
-    }, {passive:false});
+    document.addEventListener('mousemove', function(e) {
+      if(drag.active) {
+        let dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+        if(Math.abs(dx) > 6 || Math.abs(dy) > 6) drag.moved = true;
+        if(drag.moved) {
+          let nx = e.clientX - drag.offset.x;
+          let ny = e.clientY - drag.offset.y;
+          drag.node.style.left = nx + "px"; drag.node.style.top = ny + "px";
+        }
+      }
+    });
+    document.addEventListener('mouseup', function(e) {
+      if(drag.active) {
+        let dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+        if(!drag.moved) {
+          // Clic simple = toggle sélection (présence)
+          stateAppel[drag.nom] = !stateAppel[drag.nom];
+          drag.node.classList.toggle('selected', stateAppel[drag.nom]);
+        } else {
+          // Drag end
+          positions[drag.nom] = {
+            x: drag.node.offsetLeft,
+            y: drag.node.offsetTop
+          };
+        }
+        drag.active = false; drag.nom = null; drag.node = null;
+        document.body.style.userSelect = "";
+        document.body.style.overflow = "";
+      }
+    });
 
-    // INFRACTION: options TOUJOURS DEVANT !
+    // --- MOBILE/TABLET : tap = sélection immédiate, drag = déplacement
+    let touchTimer = null, touchMoved = false, lastTap = 0;
+    sc.addEventListener('touchstart', function(e) {
+      if(e.touches.length>1) return;
+      drag.active = true; drag.nom = nom; drag.node = sc;
+      drag.startX = e.touches[0].clientX; drag.startY = e.touches[0].clientY; drag.moved = false;
+      drag.offset = {
+        x: e.touches[0].clientX - sc.offsetLeft,
+        y: e.touches[0].clientY - sc.offsetTop
+      };
+      // Pour que le drag ne masque pas le tap
+      touchMoved = false;
+      touchTimer = setTimeout(()=>{
+        touchTimer = null;
+      }, 300);
+    }, {passive:false});
+    sc.addEventListener('touchmove', function(e) {
+      if(drag.active) {
+        let dx = e.touches[0].clientX - drag.startX, dy = e.touches[0].clientY - drag.startY;
+        if(Math.abs(dx)>6 || Math.abs(dy)>6) drag.moved = true;
+        if(drag.moved) {
+          let nx = e.touches[0].clientX - drag.offset.x;
+          let ny = e.touches[0].clientY - drag.offset.y;
+          drag.node.style.left = nx + "px"; drag.node.style.top = ny + "px";
+        }
+      }
+      e.preventDefault();
+    }, {passive:false});
+    sc.addEventListener('touchend', function(e) {
+      if(drag.active) {
+        if(!drag.moved) {
+          // TAP : sélection immédiate
+          stateAppel[drag.nom] = !stateAppel[drag.nom];
+          drag.node.classList.toggle('selected', stateAppel[drag.nom]);
+        } else {
+          // Drag end
+          positions[drag.nom] = {
+            x: drag.node.offsetLeft,
+            y: drag.node.offsetTop
+          };
+        }
+        drag.active = false; drag.nom = null; drag.node = null;
+      }
+    });
+
+    // --- INFRACTIONS popup devant
     let toggle = sc.querySelector('.toggle');
     toggle.addEventListener('change', function() {
       const opts = sc.querySelector('.options');
-      // Fermer tous les autres menus et remettre les z-index à 1
       document.querySelectorAll('.student-card').forEach(card => {
         card.classList.remove('z-top');
         if (card !== sc) card.querySelector('.options').style.display = 'none';
       });
       if (this.checked) {
         opts.style.display = 'block';
-        sc.classList.add('z-top'); // Passe la carte devant toutes les autres
+        sc.classList.add('z-top');
       } else {
         opts.style.display = 'none';
         sc.classList.remove('z-top');
@@ -260,7 +301,6 @@ function renderAll() {
       }
     });
 
-    // Masquer le menu si clic hors carte/options
     opts.addEventListener('click', e=>e.stopPropagation());
     document.addEventListener('mousedown', function(e) {
       if (!sc.contains(e.target)) {
@@ -269,7 +309,6 @@ function renderAll() {
         toggle.checked = false;
       }
     });
-    // INFRACTIONS (garder à jour)
     sc.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', function() {
         if (this.checked) infractions[nom][this.value] = "";
@@ -278,21 +317,9 @@ function renderAll() {
       });
     });
   });
-  // DRAG GLOBALE
-  document.onmousemove = function(e) {
-    if(drag.active && !e.touches) dragMove(e);
-  }
-  document.onmouseup = function(e) {
-    if(drag.active && !e.touches) dragEnd(e);
-  }
-  document.ontouchmove = function(e) {
-    if(drag.active && e.touches.length === 1) { dragMove(e.touches[0]); e.preventDefault(); }
-  }
-  document.ontouchend = function(e) {
-    if(drag.active) dragEnd(e.changedTouches[0]);
-  }
   updateResultList();
 }
+
 function updateResultList() {
   resultList.innerHTML = '';
   eleves.forEach(nom => {
