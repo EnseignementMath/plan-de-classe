@@ -114,7 +114,6 @@ const detailsOptions = {
   ]
 };
 
-// --- Liste à modifier pour importer tes élèves ---
 const eleves = [
   "Aya", "Roumaissa", "Mohamed", "Maryam", "Merve", "Néhémie", "Nemaaly", "Théo",
   "Mathys", "Sheldon", "Inahya", "Sam Ismaël", "Aissa", "Carlos", "Malone", "Raphaël",
@@ -183,6 +182,39 @@ function renderAll() {
     });
     freeArea.appendChild(sc);
 
+    // Sélection présence (tap/clic)
+    // (Drag & drop n'active PAS la sélection)
+    let tapTimeout, tapStartX, tapStartY, tapMoved = false;
+    sc.addEventListener('touchstart', function(e) {
+      tapMoved = false;
+      let t = e.touches[0];
+      tapStartX = t.clientX;
+      tapStartY = t.clientY;
+      tapTimeout = setTimeout(() => { tapTimeout = null; }, 350); // max tap time
+    }, {passive:false});
+    sc.addEventListener('touchmove', function(e) {
+      if (!tapTimeout) return;
+      let t = e.touches[0];
+      if (Math.abs(t.clientX - tapStartX) > 15 || Math.abs(t.clientY - tapStartY) > 15) {
+        tapMoved = true; clearTimeout(tapTimeout); tapTimeout = null;
+      }
+    }, {passive:false});
+    sc.addEventListener('touchend', function(e) {
+      if (tapTimeout && !tapMoved) {
+        // TAP = sélectionner
+        stateAppel[nom] = !stateAppel[nom];
+        sc.classList.toggle('selected', stateAppel[nom]);
+      }
+      clearTimeout(tapTimeout); tapTimeout = null;
+    }, {passive:false});
+    // Clic classique
+    sc.addEventListener('click', function(e) {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.pointerType === 'touch') return; // déjà géré
+      stateAppel[nom] = !stateAppel[nom];
+      sc.classList.toggle('selected', stateAppel[nom]);
+    });
+
     // DRAG & DROP ABSOLU (SOURIS + MOBILE) AVEC DÉSACTIVATION DU SCROLL
     let offset = {x:0, y:0}, dragging = false;
 
@@ -194,7 +226,7 @@ function renderAll() {
       offset.x = e.clientX - sc.offsetLeft;
       offset.y = e.clientY - sc.offsetTop;
       document.body.style.userSelect = "none";
-      document.body.style.overflow = "hidden"; // Empêche le scroll pendant drag
+      document.body.style.overflow = "hidden";
     });
     document.addEventListener('mousemove', function(e) {
       if(dragging) {
@@ -222,8 +254,7 @@ function renderAll() {
       let touch = e.touches[0];
       offset.x = touch.clientX - sc.offsetLeft;
       offset.y = touch.clientY - sc.offsetTop;
-      document.body.style.overflow = "hidden"; // Désactive scroll
-      e.preventDefault(); // Empêche scroll sur tap
+      document.body.style.overflow = "hidden";
     }, {passive: false});
     document.addEventListener('touchmove', function(e) {
       if(dragging) {
@@ -231,7 +262,7 @@ function renderAll() {
         let nx = touch.clientX - offset.x;
         let ny = touch.clientY - offset.y;
         sc.style.left = nx + "px"; sc.style.top = ny + "px";
-        e.preventDefault(); // Empêche scroll pendant drag
+        e.preventDefault();
       }
     }, {passive: false});
     document.addEventListener('touchend', function(e) {
@@ -244,13 +275,6 @@ function renderAll() {
         dragging = false;
         document.body.style.overflow = "";
       }
-    });
-
-    // Sélection présence (appel)
-    sc.addEventListener('click', function(e) {
-      if (e.target.tagName === 'INPUT') return;
-      stateAppel[nom] = !stateAppel[nom];
-      sc.classList.toggle('selected', stateAppel[nom]);
     });
 
     // Infractions
@@ -272,6 +296,8 @@ function renderAll() {
         updateResultList();
       });
     });
+    // Empêche scroll sur toute interaction
+    sc.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
   });
   updateResultList();
 }
