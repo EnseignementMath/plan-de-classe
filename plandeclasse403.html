@@ -161,7 +161,7 @@ function resetAll() {
 }
 resetAll();
 
-// --- DRAG & TAP : la sélection se fait sur TOUT tap/clic rapide, drag si déplacement
+// Sélection immédiate au touch/clic (et drag sur déplacement)
 let drag = { active: false, nom: null, node: null, offset: {x:0, y:0}, startX: 0, startY: 0, moved: false };
 
 function renderAll() {
@@ -196,12 +196,16 @@ function renderAll() {
     });
     freeArea.appendChild(sc);
 
-    // --- PC : clic simple -> sélection, drag si déplacement
+    // --- Sélection immédiate dès touch/click ---
+    // PC souris
     sc.addEventListener('mousedown', function(e) {
       if(e.button!==0) return;
       drag.active = true; drag.nom = nom; drag.node = sc;
       drag.startX = e.clientX; drag.startY = e.clientY; drag.moved = false;
       drag.offset = { x: e.clientX - sc.offsetLeft, y: e.clientY - sc.offsetTop };
+      // Sélection immédiate
+      stateAppel[nom] = !stateAppel[nom];
+      sc.classList.toggle('selected', stateAppel[nom]);
       document.body.style.userSelect = "none";
       document.body.style.overflow = "hidden";
     });
@@ -218,13 +222,7 @@ function renderAll() {
     });
     document.addEventListener('mouseup', function(e) {
       if(drag.active) {
-        let dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
-        if(!drag.moved) {
-          // Clic simple = toggle sélection (présence)
-          stateAppel[drag.nom] = !stateAppel[drag.nom];
-          drag.node.classList.toggle('selected', stateAppel[drag.nom]);
-        } else {
-          // Drag end
+        if(drag.moved) {
           positions[drag.nom] = {
             x: drag.node.offsetLeft,
             y: drag.node.offsetTop
@@ -236,8 +234,7 @@ function renderAll() {
       }
     });
 
-    // --- MOBILE/TABLET : tap = sélection immédiate, drag = déplacement
-    let touchTimer = null, touchMoved = false, lastTap = 0;
+    // Tactile (stylet ou doigt)
     sc.addEventListener('touchstart', function(e) {
       if(e.touches.length>1) return;
       drag.active = true; drag.nom = nom; drag.node = sc;
@@ -246,11 +243,9 @@ function renderAll() {
         x: e.touches[0].clientX - sc.offsetLeft,
         y: e.touches[0].clientY - sc.offsetTop
       };
-      // Pour que le drag ne masque pas le tap
-      touchMoved = false;
-      touchTimer = setTimeout(()=>{
-        touchTimer = null;
-      }, 300);
+      // Sélection immédiate au contact
+      stateAppel[nom] = !stateAppel[nom];
+      sc.classList.toggle('selected', stateAppel[nom]);
     }, {passive:false});
     sc.addEventListener('touchmove', function(e) {
       if(drag.active) {
@@ -265,20 +260,13 @@ function renderAll() {
       e.preventDefault();
     }, {passive:false});
     sc.addEventListener('touchend', function(e) {
-      if(drag.active) {
-        if(!drag.moved) {
-          // TAP : sélection immédiate
-          stateAppel[drag.nom] = !stateAppel[drag.nom];
-          drag.node.classList.toggle('selected', stateAppel[drag.nom]);
-        } else {
-          // Drag end
-          positions[drag.nom] = {
-            x: drag.node.offsetLeft,
-            y: drag.node.offsetTop
-          };
-        }
-        drag.active = false; drag.nom = null; drag.node = null;
+      if(drag.active && drag.moved) {
+        positions[nom] = {
+          x: sc.offsetLeft,
+          y: sc.offsetTop
+        };
       }
+      drag.active = false; drag.nom = null; drag.node = null;
     });
 
     // --- INFRACTIONS popup devant
