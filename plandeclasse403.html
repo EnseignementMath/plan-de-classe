@@ -43,7 +43,9 @@
       border: 1.3px solid #7dbbe6;
       touch-action: none;
     }
-    .student-card.selected { background: #006400; color: #fff; }
+    .student-card.selected, .student-card.selected.dragging {
+      background: #006400 !important; color: #fff !important;
+    }
     .student-card.completed { background: #ff4d4d !important; color: #fff !important; }
     .student-card.dragging { opacity: 0.55; box-shadow: 0 0 16px #1473a3; z-index: 10; }
     .header { display: flex; align-items: center; gap: 8px; width: 100%; }
@@ -245,7 +247,7 @@ function renderAll() {
     });
 
     // Sélection présence (appel)
-    sc.addEventListener('click', e => {
+    sc.addEventListener('click', function(e) {
       if (e.target.tagName === 'INPUT') return;
       stateAppel[nom] = !stateAppel[nom];
       sc.classList.toggle('selected', stateAppel[nom]);
