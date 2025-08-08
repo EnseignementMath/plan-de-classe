@@ -25,6 +25,7 @@
       border-radius: 12px;
       margin: 0 18px 0 0;
       overflow: visible;
+      touch-action: none;
     }
     .student-card {
       position: absolute;
@@ -40,6 +41,7 @@
       display: flex; flex-direction: column; align-items: center;
       padding: 5px 8px 5px 8px;
       border: 1.3px solid #7dbbe6;
+      touch-action: none;
     }
     .student-card.selected { background: #006400; color: #fff; }
     .student-card.completed { background: #ff4d4d !important; color: #fff !important; }
@@ -179,8 +181,10 @@ function renderAll() {
     });
     freeArea.appendChild(sc);
 
-    // Drag & drop absolu (souris/tactile)
+    // DRAG & DROP ABSOLU (SOURIS + MOBILE) AVEC DÉSACTIVATION DU SCROLL
     let offset = {x:0, y:0}, dragging = false;
+
+    // Souris
     sc.addEventListener('mousedown', function(e) {
       if(e.button!==0) return;
       dragging = true;
@@ -188,6 +192,7 @@ function renderAll() {
       offset.x = e.clientX - sc.offsetLeft;
       offset.y = e.clientY - sc.offsetTop;
       document.body.style.userSelect = "none";
+      document.body.style.overflow = "hidden"; // Empêche le scroll pendant drag
     });
     document.addEventListener('mousemove', function(e) {
       if(dragging) {
@@ -204,25 +209,29 @@ function renderAll() {
         sc.classList.remove('dragging');
         dragging = false;
         document.body.style.userSelect = "";
+        document.body.style.overflow = "";
       }
     });
 
-    // Tactile (mobile/tablette)
+    // Mobile/Tablette
     sc.addEventListener('touchstart', function(e) {
       dragging = true;
       sc.classList.add('dragging');
       let touch = e.touches[0];
       offset.x = touch.clientX - sc.offsetLeft;
       offset.y = touch.clientY - sc.offsetTop;
-    });
+      document.body.style.overflow = "hidden"; // Désactive scroll
+      e.preventDefault(); // Empêche scroll sur tap
+    }, {passive: false});
     document.addEventListener('touchmove', function(e) {
       if(dragging) {
         let touch = e.touches[0];
         let nx = touch.clientX - offset.x;
         let ny = touch.clientY - offset.y;
         sc.style.left = nx + "px"; sc.style.top = ny + "px";
+        e.preventDefault(); // Empêche scroll pendant drag
       }
-    }, {passive:false});
+    }, {passive: false});
     document.addEventListener('touchend', function(e) {
       if(dragging) {
         let touch = (e.changedTouches && e.changedTouches[0]) || {};
@@ -231,6 +240,7 @@ function renderAll() {
         positions[nom] = { x: nx, y: ny };
         sc.classList.remove('dragging');
         dragging = false;
+        document.body.style.overflow = "";
       }
     });
 
