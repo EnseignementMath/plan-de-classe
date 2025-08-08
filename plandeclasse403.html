@@ -20,8 +20,9 @@
       position: relative;
       width: 980px;
       min-height: 560px;
-      border: 2px solid #bbb;
-      background: #e6f7ff;
+      /* Suppression du fond bleu et de la bordure */
+      /* border: 2px solid #bbb; */
+      /* background: #e6f7ff; */
       border-radius: 12px;
       margin: 0 18px 0 0;
       overflow: visible;
@@ -59,7 +60,7 @@
       min-width: 145px; max-width: 180px; padding: 9px 7px 9px 7px;
       border: 1px solid #aaa; z-index: 1010;
     }
-    /* --- Correctif lisibilité menu options même carte verte --- */
+    /* Lisibilité menu options même carte verte */
     .student-card .options,
     .student-card .options label,
     .student-card .options input[type="checkbox"] {
@@ -70,7 +71,6 @@
     .student-card .options input[type="checkbox"] {
       accent-color: #1473a3;
     }
-    /* ------------------------------------ */
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 220px; background: #fff; }
     #result-list { list-style: none; padding: 0; margin: 0; }
     #result-list li { margin-bottom: 5px; cursor: pointer; }
@@ -91,13 +91,12 @@
   </style>
 </head>
 <body>
-  <h1>Plan de classe</h1>
+  <h1>Plan de classe — Positionnement libre</h1>
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
       <div class="lien-box" id="appel-box">Appel terminé</div>
       <div class="lien-box" id="mode-controle-box">Mode contrôle</div>
-      <div class="lien-box" id="reset-box" style="background:#f9b;">Réinitialiser</div>
       <div id="appel-result"></div>
     </div>
     <div class="free-area" id="free-area"></div>
@@ -426,15 +425,6 @@ document.getElementById('lien-box').onclick = () => {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-};
-
-// Réinitialisation
-document.getElementById('reset-box').onclick = () => {
-  if (confirm("Réinitialiser le plan de classe ?")) {
-    resetAll();
-    appelResult.innerHTML = ""; controleResult.innerHTML = "";
-    modeBtn.classList.remove('active'); modeBtn.textContent = 'Mode contrôle';
-  }
 };
 </script>
 </body>
