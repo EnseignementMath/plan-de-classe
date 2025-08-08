@@ -161,7 +161,6 @@ function resetAll() {
 }
 resetAll();
 
-// Sélection immédiate au touch/clic (et drag sur déplacement)
 let drag = { active: false, nom: null, node: null, offset: {x:0, y:0}, startX: 0, startY: 0, moved: false };
 
 function renderAll() {
@@ -196,14 +195,13 @@ function renderAll() {
     });
     freeArea.appendChild(sc);
 
-    // --- Sélection immédiate dès touch/click ---
-    // PC souris
+    // Sélection instantanée au "mousedown" ou "touchstart"
     sc.addEventListener('mousedown', function(e) {
       if(e.button!==0) return;
-      drag.active = true; drag.nom = nom; drag.node = sc;
-      drag.startX = e.clientX; drag.startY = e.clientY; drag.moved = false;
+      drag.active = true; drag.nom = nom; drag.node = sc; drag.moved = false;
+      drag.startX = e.clientX; drag.startY = e.clientY;
       drag.offset = { x: e.clientX - sc.offsetLeft, y: e.clientY - sc.offsetTop };
-      // Sélection immédiate
+      // Sélection immédiate (toggle)
       stateAppel[nom] = !stateAppel[nom];
       sc.classList.toggle('selected', stateAppel[nom]);
       document.body.style.userSelect = "none";
@@ -233,17 +231,16 @@ function renderAll() {
         document.body.style.overflow = "";
       }
     });
-
-    // Tactile (stylet ou doigt)
+    // Tactile/stylet : sélection immédiate au "touchstart"
     sc.addEventListener('touchstart', function(e) {
       if(e.touches.length>1) return;
-      drag.active = true; drag.nom = nom; drag.node = sc;
-      drag.startX = e.touches[0].clientX; drag.startY = e.touches[0].clientY; drag.moved = false;
+      drag.active = true; drag.nom = nom; drag.node = sc; drag.moved = false;
+      drag.startX = e.touches[0].clientX; drag.startY = e.touches[0].clientY;
       drag.offset = {
         x: e.touches[0].clientX - sc.offsetLeft,
         y: e.touches[0].clientY - sc.offsetTop
       };
-      // Sélection immédiate au contact
+      // Sélection immédiate
       stateAppel[nom] = !stateAppel[nom];
       sc.classList.toggle('selected', stateAppel[nom]);
     }, {passive:false});
@@ -269,7 +266,7 @@ function renderAll() {
       drag.active = false; drag.nom = null; drag.node = null;
     });
 
-    // --- INFRACTIONS popup devant
+    // INFRACTIONS popup devant
     let toggle = sc.querySelector('.toggle');
     toggle.addEventListener('change', function() {
       const opts = sc.querySelector('.options');
@@ -288,7 +285,6 @@ function renderAll() {
         });
       }
     });
-
     opts.addEventListener('click', e=>e.stopPropagation());
     document.addEventListener('mousedown', function(e) {
       if (!sc.contains(e.target)) {
