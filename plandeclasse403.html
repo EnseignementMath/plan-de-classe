@@ -182,49 +182,57 @@ function renderAll() {
     });
     freeArea.appendChild(sc);
 
-    // Sélection présence (tap/clic)
-    // (Drag & drop n'active PAS la sélection)
-    let tapTimeout, tapStartX, tapStartY, tapMoved = false;
+    // Gestion du drag & du tap pour la sélection
+    let tapStartX, tapStartY, tapMoved = false, dragging = false, offset = {x:0, y:0}, tapTimeout;
+    // Touch (mobile/tablette)
     sc.addEventListener('touchstart', function(e) {
       tapMoved = false;
+      dragging = true;
+      sc.classList.add('dragging');
       let t = e.touches[0];
-      tapStartX = t.clientX;
-      tapStartY = t.clientY;
-      tapTimeout = setTimeout(() => { tapTimeout = null; }, 350); // max tap time
+      offset.x = t.clientX - sc.offsetLeft;
+      offset.y = t.clientY - sc.offsetTop;
+      tapStartX = t.clientX; tapStartY = t.clientY;
+      document.body.style.overflow = "hidden";
+      tapTimeout = setTimeout(() => { tapTimeout = null; }, 350);
     }, {passive:false});
     sc.addEventListener('touchmove', function(e) {
-      if (!tapTimeout) return;
+      if (!dragging) return;
       let t = e.touches[0];
+      let nx = t.clientX - offset.x;
+      let ny = t.clientY - offset.y;
+      sc.style.left = nx + "px"; sc.style.top = ny + "px";
       if (Math.abs(t.clientX - tapStartX) > 15 || Math.abs(t.clientY - tapStartY) > 15) {
-        tapMoved = true; clearTimeout(tapTimeout); tapTimeout = null;
+        tapMoved = true;
+        clearTimeout(tapTimeout); tapTimeout = null;
       }
+      e.preventDefault();
     }, {passive:false});
     sc.addEventListener('touchend', function(e) {
-      if (tapTimeout && !tapMoved) {
-        // TAP = sélectionner
+      if (dragging) {
+        let touch = (e.changedTouches && e.changedTouches[0]) || {};
+        let nx = (touch.clientX || sc.offsetLeft+1) - offset.x;
+        let ny = (touch.clientY || sc.offsetTop+1) - offset.y;
+        positions[nom] = { x: nx, y: ny };
+        sc.classList.remove('dragging');
+        dragging = false;
+        document.body.style.overflow = "";
+      }
+      // TAP rapide (et pas drag) = sélectionner présence
+      if (tapTimeout && !tapMoved && e.target.tagName !== 'INPUT') {
         stateAppel[nom] = !stateAppel[nom];
         sc.classList.toggle('selected', stateAppel[nom]);
       }
       clearTimeout(tapTimeout); tapTimeout = null;
     }, {passive:false});
-    // Clic classique
-    sc.addEventListener('click', function(e) {
-      if (e.target.tagName === 'INPUT') return;
-      if (e.pointerType === 'touch') return; // déjà géré
-      stateAppel[nom] = !stateAppel[nom];
-      sc.classList.toggle('selected', stateAppel[nom]);
-    });
-
-    // DRAG & DROP ABSOLU (SOURIS + MOBILE) AVEC DÉSACTIVATION DU SCROLL
-    let offset = {x:0, y:0}, dragging = false;
-
-    // Souris
+    // Clic (PC)
     sc.addEventListener('mousedown', function(e) {
       if(e.button!==0) return;
       dragging = true;
       sc.classList.add('dragging');
       offset.x = e.clientX - sc.offsetLeft;
       offset.y = e.clientY - sc.offsetTop;
+      tapStartX = e.clientX; tapStartY = e.clientY;
       document.body.style.userSelect = "none";
       document.body.style.overflow = "hidden";
     });
@@ -244,40 +252,17 @@ function renderAll() {
         dragging = false;
         document.body.style.userSelect = "";
         document.body.style.overflow = "";
+        // Si mouseup sans drag ni input => toggle sélection
+        if(Math.abs(e.clientX - (tapStartX||e.clientX))<5 && Math.abs(e.clientY - (tapStartY||e.clientY))<5){
+          if (e.target.tagName !== 'INPUT') {
+            stateAppel[nom] = !stateAppel[nom];
+            sc.classList.toggle('selected', stateAppel[nom]);
+          }
+        }
       }
     });
 
-    // Mobile/Tablette
-    sc.addEventListener('touchstart', function(e) {
-      dragging = true;
-      sc.classList.add('dragging');
-      let touch = e.touches[0];
-      offset.x = touch.clientX - sc.offsetLeft;
-      offset.y = touch.clientY - sc.offsetTop;
-      document.body.style.overflow = "hidden";
-    }, {passive: false});
-    document.addEventListener('touchmove', function(e) {
-      if(dragging) {
-        let touch = e.touches[0];
-        let nx = touch.clientX - offset.x;
-        let ny = touch.clientY - offset.y;
-        sc.style.left = nx + "px"; sc.style.top = ny + "px";
-        e.preventDefault();
-      }
-    }, {passive: false});
-    document.addEventListener('touchend', function(e) {
-      if(dragging) {
-        let touch = (e.changedTouches && e.changedTouches[0]) || {};
-        let nx = (touch.clientX || sc.offsetLeft+1) - offset.x;
-        let ny = (touch.clientY || sc.offsetTop+1) - offset.y;
-        positions[nom] = { x: nx, y: ny };
-        sc.classList.remove('dragging');
-        dragging = false;
-        document.body.style.overflow = "";
-      }
-    });
-
-    // Infractions
+    // Infractions (ne change pas la sélection)
     sc.querySelector('.toggle').addEventListener('change', function() {
       const opts = sc.querySelector('.options');
       if (this.checked) opts.style.display = 'block';
@@ -296,7 +281,6 @@ function renderAll() {
         updateResultList();
       });
     });
-    // Empêche scroll sur toute interaction
     sc.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
   });
   updateResultList();
