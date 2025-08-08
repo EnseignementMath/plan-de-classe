@@ -37,7 +37,7 @@
       cursor: grab;
       user-select: none;
       z-index: 1;
-      transition: box-shadow .2s, background .2s, color .2s;
+      transition: box-shadow .2s, background .2s, color .2s, z-index .2s;
       display: flex; flex-direction: column; align-items: center;
       padding: 5px 8px 5px 8px;
       border: 1.3px solid #7dbbe6;
@@ -47,11 +47,12 @@
       background: #006400 !important; color: #fff !important;
     }
     .student-card.completed { background: #ff4d4d !important; color: #fff !important; }
-    .student-card.dragging { opacity: 0.55; box-shadow: 0 0 16px #1473a3; z-index: 10; }
+    .student-card.dragging { opacity: 0.55; box-shadow: 0 0 16px #1473a3; z-index: 10000 !important; }
+    .student-card.z-top { z-index: 1000 !important; }
     .header { display: flex; align-items: center; gap: 8px; width: 100%; }
     .toggle { cursor: pointer; }
     .title, .title-link { font-weight: bold; }
-    .options { margin-top: 6px; display: none; padding-left: 4px; }
+    .options { margin-top: 6px; display: none; padding-left: 4px; position: absolute; left: 110%; top: 0; background: #fff; border-radius: 7px; box-shadow: 0 2px 9px #0002; min-width: 145px; max-width: 180px; padding: 9px 7px 9px 7px; border: 1px solid #aaa; z-index: 1010; }
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 220px; background: #fff; }
     #result-list { list-style: none; padding: 0; margin: 0; }
     #result-list li { margin-bottom: 5px; cursor: pointer; }
@@ -73,7 +74,6 @@
 </head>
 <body>
   <h1>Plan de classe — Positionnement libre</h1>
-
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -82,19 +82,15 @@
       <div class="lien-box" id="reset-box" style="background:#f9b;">Réinitialiser</div>
       <div id="appel-result"></div>
     </div>
-
     <div class="free-area" id="free-area"></div>
-
     <div class="result">
       <ul id="result-list"></ul>
       <div id="controle-result"></div>
     </div>
   </div>
-
   <div class="footer-container">
     <div class="footer-box">Tableau</div>
   </div>
-
 <script>
 const detailsOptions = {
   "Comportement": [
@@ -123,7 +119,7 @@ const eleves = [
 let positions = {}; // { nom: {x, y} }
 let stateAppel = {}; // { nom: true/false }
 let infractions = {}; // { nom: { "catégorie": "option" } }
-let rendus = []; // { nom, pages }
+let rendus = [];
 let nomsRendus = [];
 
 const freeArea = document.getElementById('free-area');
@@ -133,6 +129,7 @@ const modeBtn = document.getElementById('mode-controle-box');
 const controleResult = document.getElementById('controle-result');
 const appelResult = document.getElementById('appel-result');
 
+// --- RESET & INIT
 function resetAll() {
   positions = {};
   stateAppel = {};
@@ -151,6 +148,38 @@ function resetAll() {
 }
 resetAll();
 
+// Drag & drop (centralisé)
+let drag = { active: false, nom: null, node: null, offset: {x:0, y:0}, startX: 0, startY: 0 };
+function dragStart(e, sc, nom, pointer) {
+  drag.active = true; drag.nom = nom; drag.node = sc;
+  sc.classList.add('dragging');
+  drag.startX = pointer.clientX; drag.startY = pointer.clientY;
+  drag.offset.x = pointer.clientX - sc.offsetLeft;
+  drag.offset.y = pointer.clientY - sc.offsetTop;
+  document.body.style.overflow = "hidden";
+}
+function dragMove(pointer) {
+  if (!drag.active) return;
+  let nx = pointer.clientX - drag.offset.x;
+  let ny = pointer.clientY - drag.offset.y;
+  drag.node.style.left = nx + "px";
+  drag.node.style.top = ny + "px";
+}
+function dragEnd(pointer) {
+  if (!drag.active) return;
+  let nx = pointer.clientX - drag.offset.x;
+  let ny = pointer.clientY - drag.offset.y;
+  positions[drag.nom] = { x: nx, y: ny };
+  drag.node.classList.remove('dragging');
+  document.body.style.overflow = "";
+  // Sélection simple si quasi pas bougé
+  if (Math.abs(pointer.clientX - drag.startX) < 5 && Math.abs(pointer.clientY - drag.startY) < 5) {
+    stateAppel[drag.nom] = !stateAppel[drag.nom];
+    drag.node.classList.toggle('selected', stateAppel[drag.nom]);
+  }
+  drag.active = false; drag.nom = null; drag.node = null;
+}
+
 function renderAll() {
   freeArea.innerHTML = '';
   eleves.forEach((nom, idx) => {
@@ -159,6 +188,7 @@ function renderAll() {
     sc.className = 'student-card';
     sc.style.left = pos.x + "px";
     sc.style.top = pos.y + "px";
+    sc.style.zIndex = 1;
     if(stateAppel[nom]) sc.classList.add('selected');
     if(rendus.find(e=>e.nom===nom)) sc.classList.add('completed');
     sc.setAttribute('data-nom', nom);
@@ -179,101 +209,51 @@ function renderAll() {
       if(infractions[nom] && infractions[nom][cat]) inp.checked = true;
       lbl.append(inp, ' ' + cat);
       opts.append(lbl, document.createElement('br'));
+      opts.append(lbl);
     });
     freeArea.appendChild(sc);
 
-    // Gestion du drag & du tap pour la sélection
-    let tapStartX, tapStartY, tapMoved = false, dragging = false, offset = {x:0, y:0}, tapTimeout;
-    // Touch (mobile/tablette)
-    sc.addEventListener('touchstart', function(e) {
-      tapMoved = false;
-      dragging = true;
-      sc.classList.add('dragging');
-      let t = e.touches[0];
-      offset.x = t.clientX - sc.offsetLeft;
-      offset.y = t.clientY - sc.offsetTop;
-      tapStartX = t.clientX; tapStartY = t.clientY;
-      document.body.style.overflow = "hidden";
-      tapTimeout = setTimeout(() => { tapTimeout = null; }, 350);
-    }, {passive:false});
-    sc.addEventListener('touchmove', function(e) {
-      if (!dragging) return;
-      let t = e.touches[0];
-      let nx = t.clientX - offset.x;
-      let ny = t.clientY - offset.y;
-      sc.style.left = nx + "px"; sc.style.top = ny + "px";
-      if (Math.abs(t.clientX - tapStartX) > 15 || Math.abs(t.clientY - tapStartY) > 15) {
-        tapMoved = true;
-        clearTimeout(tapTimeout); tapTimeout = null;
-      }
-      e.preventDefault();
-    }, {passive:false});
-    sc.addEventListener('touchend', function(e) {
-      if (dragging) {
-        let touch = (e.changedTouches && e.changedTouches[0]) || {};
-        let nx = (touch.clientX || sc.offsetLeft+1) - offset.x;
-        let ny = (touch.clientY || sc.offsetTop+1) - offset.y;
-        positions[nom] = { x: nx, y: ny };
-        sc.classList.remove('dragging');
-        dragging = false;
-        document.body.style.overflow = "";
-      }
-      // TAP rapide (et pas drag) = sélectionner présence
-      if (tapTimeout && !tapMoved && e.target.tagName !== 'INPUT') {
-        stateAppel[nom] = !stateAppel[nom];
-        sc.classList.toggle('selected', stateAppel[nom]);
-      }
-      clearTimeout(tapTimeout); tapTimeout = null;
-    }, {passive:false});
-    // Clic (PC)
+    // --- DRAG PC & MOBILE
     sc.addEventListener('mousedown', function(e) {
       if(e.button!==0) return;
-      dragging = true;
-      sc.classList.add('dragging');
-      offset.x = e.clientX - sc.offsetLeft;
-      offset.y = e.clientY - sc.offsetTop;
-      tapStartX = e.clientX; tapStartY = e.clientY;
-      document.body.style.userSelect = "none";
-      document.body.style.overflow = "hidden";
+      dragStart(e, sc, nom, e);
     });
-    document.addEventListener('mousemove', function(e) {
-      if(dragging) {
-        let nx = e.clientX - offset.x;
-        let ny = e.clientY - offset.y;
-        sc.style.left = nx + "px"; sc.style.top = ny + "px";
-      }
-    });
-    document.addEventListener('mouseup', function(e) {
-      if(dragging) {
-        let nx = e.clientX - offset.x;
-        let ny = e.clientY - offset.y;
-        positions[nom] = { x: nx, y: ny };
-        sc.classList.remove('dragging');
-        dragging = false;
-        document.body.style.userSelect = "";
-        document.body.style.overflow = "";
-        // Si mouseup sans drag ni input => toggle sélection
-        if(Math.abs(e.clientX - (tapStartX||e.clientX))<5 && Math.abs(e.clientY - (tapStartY||e.clientY))<5){
-          if (e.target.tagName !== 'INPUT') {
-            stateAppel[nom] = !stateAppel[nom];
-            sc.classList.toggle('selected', stateAppel[nom]);
-          }
-        }
-      }
-    });
+    sc.addEventListener('touchstart', function(e) {
+      if(e.touches.length > 1) return;
+      dragStart(e, sc, nom, e.touches[0]);
+    }, {passive:false});
 
-    // Infractions (ne change pas la sélection)
-    sc.querySelector('.toggle').addEventListener('change', function() {
+    // INFRACTION: options TOUJOURS DEVANT !
+    let toggle = sc.querySelector('.toggle');
+    toggle.addEventListener('change', function() {
       const opts = sc.querySelector('.options');
-      if (this.checked) opts.style.display = 'block';
-      else {
+      // Fermer tous les autres menus et remettre les z-index à 1
+      document.querySelectorAll('.student-card').forEach(card => {
+        card.classList.remove('z-top');
+        if (card !== sc) card.querySelector('.options').style.display = 'none';
+      });
+      if (this.checked) {
+        opts.style.display = 'block';
+        sc.classList.add('z-top'); // Passe la carte devant toutes les autres
+      } else {
         opts.style.display = 'none';
+        sc.classList.remove('z-top');
         opts.querySelectorAll('input[type=checkbox]').forEach(cb => {
-          cb.checked = false;
-          delete infractions[nom][cb.value];
+          cb.checked = false; delete infractions[nom][cb.value];
         });
       }
     });
+
+    // Masquer le menu si clic hors carte/options
+    opts.addEventListener('click', e=>e.stopPropagation());
+    document.addEventListener('mousedown', function(e) {
+      if (!sc.contains(e.target)) {
+        opts.style.display = 'none';
+        sc.classList.remove('z-top');
+        toggle.checked = false;
+      }
+    });
+    // INFRACTIONS (garder à jour)
     sc.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', function() {
         if (this.checked) infractions[nom][this.value] = "";
@@ -281,8 +261,20 @@ function renderAll() {
         updateResultList();
       });
     });
-    sc.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
   });
+  // DRAG GLOBALE
+  document.onmousemove = function(e) {
+    if(drag.active && !e.touches) dragMove(e);
+  }
+  document.onmouseup = function(e) {
+    if(drag.active && !e.touches) dragEnd(e);
+  }
+  document.ontouchmove = function(e) {
+    if(drag.active && e.touches.length === 1) { dragMove(e.touches[0]); e.preventDefault(); }
+  }
+  document.ontouchend = function(e) {
+    if(drag.active) dragEnd(e.changedTouches[0]);
+  }
   updateResultList();
 }
 function updateResultList() {
@@ -420,8 +412,13 @@ document.getElementById('lien-box').onclick = () => {
 };
 
 // Réinitialisation
-document.getElementById('reset-box').onclick = () => { resetAll(); appelResult.innerHTML = ""; controleResult.innerHTML = ""; modeBtn.classList.remove('active'); modeBtn.textContent = 'Mode contrôle'; };
-
+document.getElementById('reset-box').onclick = () => {
+  if (confirm("Réinitialiser le plan de classe ?")) {
+    resetAll();
+    appelResult.innerHTML = ""; controleResult.innerHTML = "";
+    modeBtn.classList.remove('active'); modeBtn.textContent = 'Mode contrôle';
+  }
+};
 </script>
 </body>
 </html>
