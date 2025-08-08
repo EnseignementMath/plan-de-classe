@@ -88,7 +88,7 @@
   </style>
 </head>
 <body>
-  <h1>Salle 208</h1>
+  <h1>Plan de classe — Positionnement libre</h1>
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -440,7 +440,7 @@ modeBtn.onclick = () => {
   saveToStorage();
 };
 
-// Export JSON
+// Export JSON (sans positions)
 document.getElementById('lien-box').onclick = () => {
   const infractionsByCat = { "Comportement": [], "Travail non fait": [], "Oubli de matériel": [] };
   eleves.forEach(nom=>{
@@ -467,8 +467,8 @@ document.getElementById('lien-box').onclick = () => {
     infractions: infractionsByCat,
     presents,
     absents,
-    "Copies dans l'ordre des rendus": copiesOrdr,
-    positions
+    "Copies dans l'ordre des rendus": copiesOrdr
+    // positions supprimé !
   };
   const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
