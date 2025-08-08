@@ -88,7 +88,7 @@
   </style>
 </head>
 <body>
-  <h1>Salle 209</h1>
+  <h1>Salle 208</h1>
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -106,6 +106,7 @@
     <div class="footer-box">Tableau</div>
   </div>
 <script>
+const STORAGE_KEY = "plan_classe_2025";
 const detailsOptions = {
   "Comportement": [
     "Insulte envers le professeur","Insulte envers un camarade","Insolence",
@@ -136,6 +137,30 @@ let infractions = {};
 let rendus = [];
 let nomsRendus = [];
 
+// Chargement des données si elles existent
+function loadFromStorage() {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (!data) return false;
+  try {
+    const obj = JSON.parse(data);
+    positions = obj.positions || {};
+    stateAppel = obj.stateAppel || {};
+    infractions = obj.infractions || {};
+    rendus = obj.rendus || [];
+    nomsRendus = obj.nomsRendus || [];
+    return true;
+  } catch {
+    return false;
+  }
+}
+// Sauvegarde
+function saveToStorage() {
+  const data = {
+    positions, stateAppel, infractions, rendus, nomsRendus
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
 const freeArea = document.getElementById('free-area');
 const resultPanel = document.querySelector('.result');
 const resultList = document.getElementById('result-list');
@@ -157,9 +182,12 @@ function resetAll() {
     stateAppel[nom] = false;
     infractions[nom] = {};
   });
+  saveToStorage();
   renderAll();
 }
-resetAll();
+
+if (!loadFromStorage()) resetAll();
+else renderAll();
 
 // Drag variables
 let drag = { active: false, nom: null, node: null, offset: {x:0, y:0}, startX: 0, startY: 0, moved: false };
@@ -203,10 +231,10 @@ function renderAll() {
 
     // === CLIC/TAP BREF : toggle présence ===
     sc.addEventListener('click', function(e) {
-      // N'agit PAS si on clique sur la coche ou le menu d'infraction !
       if(isInput(e.target)) return;
       stateAppel[nom] = !stateAppel[nom];
       sc.classList.toggle('selected', stateAppel[nom]);
+      saveToStorage();
     });
 
     // === DRAG (PC & TABLETTE) ===
@@ -236,6 +264,7 @@ function renderAll() {
             x: drag.node.offsetLeft,
             y: drag.node.offsetTop
           };
+          saveToStorage();
         }
         drag.active = false; drag.nom = null; drag.node = null;
         document.body.style.userSelect = "";
@@ -270,6 +299,7 @@ function renderAll() {
           x: sc.offsetLeft,
           y: sc.offsetTop
         };
+        saveToStorage();
       }
       drag.active = false; drag.nom = null; drag.node = null;
     });
@@ -292,6 +322,7 @@ function renderAll() {
           cb.checked = false; delete infractions[nom][cb.value];
         });
       }
+      saveToStorage();
     });
     opts.addEventListener('click', e=>e.stopPropagation());
     document.addEventListener('mousedown', function(e) {
@@ -306,6 +337,7 @@ function renderAll() {
         if (this.checked) infractions[nom][this.value] = "";
         else delete infractions[nom][this.value];
         updateResultList();
+        saveToStorage();
       });
     });
   });
@@ -338,6 +370,7 @@ function updateResultList() {
               infractions[nom][cat] = opt;
               li.textContent = `${nom} : ${cat} : ${opt}`;
               sel.remove();
+              saveToStorage();
             }
           });
         });
@@ -389,6 +422,7 @@ modeBtn.onclick = () => {
             sc.classList.add('completed');
             rendus.push({ nom, pages });
             for (let i = 0; i < pages; i++) nomsRendus.push(nom);
+            saveToStorage();
           }
         });
       });
@@ -403,6 +437,7 @@ modeBtn.onclick = () => {
     }
   });
   modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
+  saveToStorage();
 };
 
 // Export JSON
