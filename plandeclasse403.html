@@ -52,7 +52,25 @@
     .header { display: flex; align-items: center; gap: 8px; width: 100%; }
     .toggle { cursor: pointer; }
     .title, .title-link { font-weight: bold; }
-    .options { margin-top: 6px; display: none; padding-left: 4px; position: absolute; left: 110%; top: 0; background: #fff; border-radius: 7px; box-shadow: 0 2px 9px #0002; min-width: 145px; max-width: 180px; padding: 9px 7px 9px 7px; border: 1px solid #aaa; z-index: 1010; }
+    .options {
+      margin-top: 6px; display: none; padding-left: 4px;
+      position: absolute; left: 110%; top: 0; background: #fff;
+      border-radius: 7px; box-shadow: 0 2px 9px #0002;
+      min-width: 145px; max-width: 180px; padding: 9px 7px 9px 7px;
+      border: 1px solid #aaa; z-index: 1010;
+    }
+    /* --- Correctif lisibilité menu options même carte verte --- */
+    .student-card .options,
+    .student-card .options label,
+    .student-card .options input[type="checkbox"] {
+      color: #222 !important;
+      filter: none !important;
+      background: #fff !important;
+    }
+    .student-card .options input[type="checkbox"] {
+      accent-color: #1473a3;
+    }
+    /* ------------------------------------ */
     .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 220px; background: #fff; }
     #result-list { list-style: none; padding: 0; margin: 0; }
     #result-list li { margin-bottom: 5px; cursor: pointer; }
@@ -73,7 +91,7 @@
   </style>
 </head>
 <body>
-  <h1>Plan de classe — Positionnement libre</h1>
+  <h1>Plan de classe</h1>
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -116,9 +134,9 @@ const eleves = [
   "Nour", "Jilyan", "Inès", "Ismael"
 ];
 
-let positions = {}; // { nom: {x, y} }
-let stateAppel = {}; // { nom: true/false }
-let infractions = {}; // { nom: { "catégorie": "option" } }
+let positions = {};
+let stateAppel = {};
+let infractions = {};
 let rendus = [];
 let nomsRendus = [];
 
@@ -209,7 +227,6 @@ function renderAll() {
       if(infractions[nom] && infractions[nom][cat]) inp.checked = true;
       lbl.append(inp, ' ' + cat);
       opts.append(lbl, document.createElement('br'));
-      opts.append(lbl);
     });
     freeArea.appendChild(sc);
 
