@@ -42,7 +42,7 @@
       border: 1.3px solid #7dbbe6;
       touch-action: none;
     }
-    .student-card.selected, .student-card.selected.dragging {
+    .student-card.selected {
       background: #006400 !important; color: #fff !important;
     }
     .student-card.completed { background: #ff4d4d !important; color: #fff !important; }
@@ -88,7 +88,7 @@
   </style>
 </head>
 <body>
-  <h1>Plan de classe — Positionnement libre</h1>
+  <h1>Salle 209</h1>
   <div class="container">
     <div class="left-panel">
       <div class="lien-box" id="lien-box">Lien</div>
@@ -161,7 +161,13 @@ function resetAll() {
 }
 resetAll();
 
+// Drag variables
 let drag = { active: false, nom: null, node: null, offset: {x:0, y:0}, startX: 0, startY: 0, moved: false };
+
+// Helper: test si le clic/tap est sur un input (coche/infraction)
+function isInput(target) {
+  return target.tagName === "INPUT" || target.closest(".options");
+}
 
 function renderAll() {
   freeArea.innerHTML = '';
@@ -195,15 +201,20 @@ function renderAll() {
     });
     freeArea.appendChild(sc);
 
-    // Sélection instantanée au "mousedown" ou "touchstart"
+    // === CLIC/TAP BREF : toggle présence ===
+    sc.addEventListener('click', function(e) {
+      // N'agit PAS si on clique sur la coche ou le menu d'infraction !
+      if(isInput(e.target)) return;
+      stateAppel[nom] = !stateAppel[nom];
+      sc.classList.toggle('selected', stateAppel[nom]);
+    });
+
+    // === DRAG (PC & TABLETTE) ===
     sc.addEventListener('mousedown', function(e) {
-      if(e.button!==0) return;
+      if(e.button!==0 || isInput(e.target)) return;
       drag.active = true; drag.nom = nom; drag.node = sc; drag.moved = false;
       drag.startX = e.clientX; drag.startY = e.clientY;
       drag.offset = { x: e.clientX - sc.offsetLeft, y: e.clientY - sc.offsetTop };
-      // Sélection immédiate (toggle)
-      stateAppel[nom] = !stateAppel[nom];
-      sc.classList.toggle('selected', stateAppel[nom]);
       document.body.style.userSelect = "none";
       document.body.style.overflow = "hidden";
     });
@@ -231,18 +242,15 @@ function renderAll() {
         document.body.style.overflow = "";
       }
     });
-    // Tactile/stylet : sélection immédiate au "touchstart"
+    // DRAG tactile (tablette/stylet)
     sc.addEventListener('touchstart', function(e) {
-      if(e.touches.length>1) return;
+      if(e.touches.length>1 || isInput(e.target)) return;
       drag.active = true; drag.nom = nom; drag.node = sc; drag.moved = false;
       drag.startX = e.touches[0].clientX; drag.startY = e.touches[0].clientY;
       drag.offset = {
         x: e.touches[0].clientX - sc.offsetLeft,
         y: e.touches[0].clientY - sc.offsetTop
       };
-      // Sélection immédiate
-      stateAppel[nom] = !stateAppel[nom];
-      sc.classList.toggle('selected', stateAppel[nom]);
     }, {passive:false});
     sc.addEventListener('touchmove', function(e) {
       if(drag.active) {
