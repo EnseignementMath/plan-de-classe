@@ -2,59 +2,53 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Plan de classe</title>
+  <title>Plan de classe libre</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
-    h1 { text-align: center; margin-bottom: 30px; }
-    .container { display: flex; gap: 20px; align-items: flex-start; }
-
+    body { font-family: sans-serif; margin: 0; background: #f3f8fc; }
+    h1 { text-align: center; margin-top: 20px; }
+    .container { display: flex; gap: 18px; align-items: flex-start; margin: 20px; }
     .left-panel { display: flex; flex-direction: column; gap: 10px; }
     .lien-box {
       width: 120px; padding: 10px; background-color: #87CEEB;
       border-radius: 5px; text-align: center; cursor: pointer;
       user-select: none; transition: background-color .3s, color .3s;
+      margin-bottom: 0;
     }
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
-
-    .cases {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      align-items: flex-start;
+    .free-area {
+      position: relative;
+      width: 980px;
+      min-height: 560px;
+      border: 2px solid #bbb;
+      background: #e6f7ff;
+      border-radius: 12px;
+      margin: 0 18px 0 0;
+      overflow: visible;
     }
-    .case-container {
-      display: inline-flex;
-      background-color: #87CEEB;
-      border-radius: 5px;
-      overflow: hidden;
-    }
-    .subcase {
-      padding: 8px 16px;
-      border-right: 1px solid rgba(255,255,255,.7);
-      cursor: pointer;
-      transition: background-color .3s, color .3s, box-shadow .2s;
-      width: fit-content;
-      max-width: 340px;
-      min-width: 50px;
-      min-height: 30px;
-      word-break: break-word;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: inherit;
-      box-sizing: border-box;
+    .student-card {
+      position: absolute;
+      left: 0; top: 0;
+      width: 120px; min-height: 38px;
+      background: #c6e6fa;
+      border-radius: 10px;
+      box-shadow: 0 1px 8px #a9b7c4a0;
+      cursor: grab;
       user-select: none;
+      z-index: 1;
+      transition: box-shadow .2s, background .2s, color .2s;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 5px 8px 5px 8px;
+      border: 1.3px solid #7dbbe6;
     }
-    .subcase:last-child { border-right: none; }
-    .subcase.selected { background: #006400; color: #fff; }
-    .subcase.completed { background: #ff4d4d !important; color: #fff !important; }
-    .header { display: flex; align-items: center; gap: 8px; }
+    .student-card.selected { background: #006400; color: #fff; }
+    .student-card.completed { background: #ff4d4d !important; color: #fff !important; }
+    .student-card.dragging { opacity: 0.55; box-shadow: 0 0 16px #1473a3; z-index: 10; }
+    .header { display: flex; align-items: center; gap: 8px; width: 100%; }
     .toggle { cursor: pointer; }
     .title, .title-link { font-weight: bold; }
-    .options { margin-top: 8px; display: none; padding-left: 4px; }
-    .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 220px; }
+    .options { margin-top: 6px; display: none; padding-left: 4px; }
+    .result { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 220px; background: #fff; }
     #result-list { list-style: none; padding: 0; margin: 0; }
     #result-list li { margin-bottom: 5px; cursor: pointer; }
     li.detail-select { padding-left: 20px; margin-bottom: 10px; }
@@ -67,22 +61,14 @@
       display: inline-block; padding: 10px 20px;
       border: 2px solid #000; border-radius: 5px; font-weight: bold;
     }
-    .dragging { opacity: 0.3; box-shadow: 0 0 8px #007; }
-    .drag-over { outline: 2px dashed #007; background: #d7f7fa !important; }
-    .placement-controls { margin-bottom: 10px; }
-    .placement-controls input, .placement-controls textarea {
-      margin: 0 6px 6px 0; padding: 2px 4px; font-size: 1em;
-    }
-    @media (max-width:600px) {
+    @media (max-width:1000px) {
       .container { flex-direction: column; }
-      .result { min-width: 120px; }
-      .case-container { flex-wrap: wrap; }
-      .subcase { min-width: 28px; font-size: 0.95em; padding: 6px 4px; }
+      .free-area { width: 98vw; min-width: unset; }
     }
   </style>
 </head>
 <body>
-  <h1>Plan de classe</h1>
+  <h1>Plan de classe — Positionnement libre</h1>
 
   <div class="container">
     <div class="left-panel">
@@ -93,9 +79,12 @@
       <div id="appel-result"></div>
     </div>
 
-    <div class="cases" id="cases"></div>
+    <div class="free-area" id="free-area"></div>
 
-    <div class="result"></div>
+    <div class="result">
+      <ul id="result-list"></ul>
+      <div id="controle-result"></div>
+    </div>
   </div>
 
   <div class="footer-container">
@@ -121,426 +110,296 @@ const detailsOptions = {
   ]
 };
 
-let lignes, colonnes, prenoms = [];
-let plan = [];
+// --- Liste à modifier pour importer tes élèves ---
+const eleves = [
+  "Aya", "Roumaissa", "Mohamed", "Maryam", "Merve", "Néhémie", "Nemaaly", "Théo",
+  "Mathys", "Sheldon", "Inahya", "Sam Ismaël", "Aissa", "Carlos", "Malone", "Raphaël",
+  "Nour", "Jilyan", "Inès", "Ismael"
+];
 
-const casesContainer = document.getElementById('cases');
+let positions = {}; // { nom: {x, y} }
+let stateAppel = {}; // { nom: true/false }
+let infractions = {}; // { nom: { "catégorie": "option" } }
+let rendus = []; // { nom, pages }
+let nomsRendus = [];
+
+const freeArea = document.getElementById('free-area');
 const resultPanel = document.querySelector('.result');
+const resultList = document.getElementById('result-list');
+const modeBtn = document.getElementById('mode-controle-box');
+const controleResult = document.getElementById('controle-result');
+const appelResult = document.getElementById('appel-result');
 
-function demandeInfosForm() {
-  resultPanel.innerHTML = `
-    <form id="placementForm" class="placement-controls">
-      <label>Lignes : <input type="number" id="nblignes" min="1" max="16" value="5" required></label>
-      <label>Colonnes : <input type="number" id="nbcolonnes" min="1" max="16" value="6" required></label><br>
-      <label>Liste des prénoms (un par ligne ou séparés par virgule):<br>
-        <textarea id="listePrenoms" rows="6" style="width:96%;" required>
-Aya,Roumaissa,Mohamed,Maryam,Merve,Néhémie,Nemaaly,Théo,Mathys,Sheldon,Inahya,Sam Ismaël,Aissa,Carlos,Malone,Raphaël,Nour,Jilyan,Inès,Ismael</textarea></label><br>
-      <button type="submit">Créer la grille</button>
-    </form>
-  `;
-  casesContainer.innerHTML = '';
-  document.getElementById('placementForm').onsubmit = function(e) {
-    e.preventDefault();
-    lignes = parseInt(document.getElementById('nblignes').value,10);
-    colonnes = parseInt(document.getElementById('nbcolonnes').value,10);
-    let listePrenoms = document.getElementById('listePrenoms').value;
-    prenoms = listePrenoms.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);
-    if (prenoms.length > lignes*colonnes) {
-      alert("Plus de prénoms que de places !");
-      return;
-    }
-    plan = Array.from({length: lignes}, () => Array(colonnes).fill(""));
-    afficherPlacement();
-  }
-}
-
-// -------- PHASE PLACEMENT --------
-let prenomChoisi = null;
-function afficherPlacement() {
-  // Panel de placement
-  resultPanel.innerHTML = `<div><b>Placez les élèves (clic prénom puis clic case)...</b></div>`;
-  const list = document.createElement('div');
-  prenoms.forEach(prenom => {
-    const btn = document.createElement('button');
-    btn.textContent = prenom;
-    btn.style.margin = '3px';
-    btn.onclick = () => {
-      prenomChoisi = prenom;
-      [...list.querySelectorAll('button')].forEach(b => b.style.background = '');
-      btn.style.background = '#ffea00';
-    };
-    list.appendChild(btn);
+function resetAll() {
+  positions = {};
+  stateAppel = {};
+  infractions = {};
+  rendus = [];
+  nomsRendus = [];
+  let w = freeArea.clientWidth || 900, x0 = 25, y0 = 28;
+  let ncol = Math.ceil(Math.sqrt(eleves.length));
+  eleves.forEach((nom, i) => {
+    let r = Math.floor(i / ncol), c = i % ncol;
+    positions[nom] = { x: x0 + c*140, y: y0 + r*70 };
+    stateAppel[nom] = false;
+    infractions[nom] = {};
   });
-  resultPanel.appendChild(list);
-
-  // Génère la grille
-  casesContainer.innerHTML = '';
-  for (let r = 0; r < lignes; r++) {
-    const cont = document.createElement('div');
-    cont.className = 'case-container';
-    for (let c = 0; c < colonnes; c++) {
-      const sc = document.createElement('div');
-      sc.className = 'subcase';
-      sc.textContent = plan[r][c] || '…';
-      sc.style.minWidth = '50px';
-      sc.onclick = () => {
-        if (!prenomChoisi) return;
-        if (plan[r][c]) return alert("Case occupée !");
-        plan[r][c] = prenomChoisi;
-        prenoms = prenoms.filter(p => p !== prenomChoisi);
-        prenomChoisi = null;
-        afficherPlacement();
-        if (prenoms.length === 0) setTimeout(() => genererInterfaceFinale(), 250);
-      };
-      cont.appendChild(sc);
-    }
-    casesContainer.appendChild(cont);
-  }
-
-  // Réinit bouton
-  const reset = document.createElement('button');
-  reset.textContent = 'Réinitialiser placement';
-  reset.style.marginTop = '16px';
-  reset.onclick = () => { demandeInfosForm(); };
-  resultPanel.appendChild(reset);
+  renderAll();
 }
+resetAll();
 
-// -------- PHASE INTERFACE FINALE --------
-
-function genererInterfaceFinale() {
-  resultPanel.innerHTML = `<ul id="result-list"></ul><div id="controle-result"></div>`;
-  casesContainer.innerHTML = '';
-  // Génère la grille + events
-  let matrice = plan.map(ligne => ligne.slice());
-  let num = 1;
-  matrice.forEach((ligne, r) => {
-    const cont = document.createElement('div');
-    cont.className = 'case-container';
-    ligne.forEach((prenom, c) => {
-      if (!prenom) return;
-      const sc = document.createElement('div');
-      sc.className = 'subcase';
-      sc.dataset.case = num;
-      sc.innerHTML = `<div class="header">
-        <input type="checkbox" class="toggle" data-case="${num}">
-        <span class="title">${prenom}</span>
+function renderAll() {
+  freeArea.innerHTML = '';
+  eleves.forEach((nom, idx) => {
+    const pos = positions[nom] || {x: 40+idx*25, y: 30+idx*16};
+    const sc = document.createElement('div');
+    sc.className = 'student-card';
+    sc.style.left = pos.x + "px";
+    sc.style.top = pos.y + "px";
+    if(stateAppel[nom]) sc.classList.add('selected');
+    if(rendus.find(e=>e.nom===nom)) sc.classList.add('completed');
+    sc.setAttribute('data-nom', nom);
+    sc.innerHTML = `
+      <div class="header">
+        <input type="checkbox" class="toggle" data-nom="${nom}" ${Object.keys(infractions[nom]).length ? "checked":""}>
+        <span class="title">${nom}</span>
       </div>
-      <div class="options" style="display:none"></div>`;
-      let opts = sc.querySelector('.options');
-      Object.keys(detailsOptions).forEach(cat => {
-        const lbl = document.createElement('label');
-        const inp = document.createElement('input');
-        inp.type = 'checkbox';
-        inp.dataset.case = num;
-        inp.value = cat;
-        lbl.append(inp, ' ' + cat);
-        opts.append(lbl, document.createElement('br'));
-      });
-      cont.appendChild(sc);
-      num++;
+      <div class="options" style="display:none"></div>
+    `;
+    let opts = sc.querySelector('.options');
+    Object.keys(detailsOptions).forEach(cat => {
+      const lbl = document.createElement('label');
+      const inp = document.createElement('input');
+      inp.type = 'checkbox';
+      inp.dataset.nom = nom;
+      inp.value = cat;
+      if(infractions[nom] && infractions[nom][cat]) inp.checked = true;
+      lbl.append(inp, ' ' + cat);
+      opts.append(lbl, document.createElement('br'));
     });
-    casesContainer.appendChild(cont);
-  });
+    freeArea.appendChild(sc);
 
-  // --- Drag & Drop ---
-  enableDragAndDropOnGrid(matrice);
-
-  // --- Appel, contrôle, infractions, export ---
-  prepareFonctionnalites(matrice);
-}
-
-// -------- DRAG & DROP --------
-function enableDragAndDropOnGrid(matrice) {
-  let dragFrom = null;
-
-  // Pour chaque subcase, events
-  let n = 0;
-  matrice.forEach((ligne, r) => {
-    ligne.forEach((prenom, c) => {
-      if (!prenom) return;
-      n++;
-      const sc = document.querySelector(`.subcase[data-case="${n}"]`);
-      // Drag souris
-      sc.draggable = true;
-      sc.addEventListener('dragstart', e => {
-        dragFrom = {r, c, n};
-        sc.classList.add('dragging');
-        e.dataTransfer.setData("text/plain", "drag");
-      });
-      sc.addEventListener('dragend', e => {
+    // Drag & drop absolu (souris/tactile)
+    let offset = {x:0, y:0}, dragging = false;
+    sc.addEventListener('mousedown', function(e) {
+      if(e.button!==0) return;
+      dragging = true;
+      sc.classList.add('dragging');
+      offset.x = e.clientX - sc.offsetLeft;
+      offset.y = e.clientY - sc.offsetTop;
+      document.body.style.userSelect = "none";
+    });
+    document.addEventListener('mousemove', function(e) {
+      if(dragging) {
+        let nx = e.clientX - offset.x;
+        let ny = e.clientY - offset.y;
+        sc.style.left = nx + "px"; sc.style.top = ny + "px";
+      }
+    });
+    document.addEventListener('mouseup', function(e) {
+      if(dragging) {
+        let nx = e.clientX - offset.x;
+        let ny = e.clientY - offset.y;
+        positions[nom] = { x: nx, y: ny };
         sc.classList.remove('dragging');
-      });
-
-      // Drag over/drop (souris)
-      sc.addEventListener('dragover', e => {
-        e.preventDefault();
-        sc.classList.add('drag-over');
-      });
-      sc.addEventListener('dragleave', e => {
-        sc.classList.remove('drag-over');
-      });
-      sc.addEventListener('drop', e => {
-        e.preventDefault();
-        sc.classList.remove('drag-over');
-        let n2 = parseInt(sc.dataset.case,10);
-        if (!dragFrom || dragFrom.n === n2) return;
-        let {r: r1, c: c1} = dragFrom;
-        // trouver r2,c2 via n2
-        let k=1, r2=0, c2=0, found=false;
-        for(let i=0;i<matrice.length;i++) for(let j=0;j<matrice[0].length;j++)
-          if (matrice[i][j]) { if (k++===n2){ r2=i;c2=j;found=true;break; } }
-        if (!found) return;
-        // swap
-        let tmp = matrice[r1][c1]; matrice[r1][c1]=matrice[r2][c2]; matrice[r2][c2]=tmp;
-        plan = matrice.map(row=>row.slice());
-        genererInterfaceFinale();
-      });
-
-      // Touch events
-      let touchTimer;
-      sc.addEventListener('touchstart', function(e) {
-        touchTimer = setTimeout(() => {
-          dragFrom = {r, c, n};
-          sc.classList.add('dragging');
-        }, 180);
-      });
-      sc.addEventListener('touchend', function(e) {
-        clearTimeout(touchTimer);
-        setTimeout(()=>sc.classList.remove('dragging'), 150);
-      });
-      sc.addEventListener('touchmove', function(e) {
-        // visual: pas de vrai ghost
-        e.preventDefault();
-        let touch = e.touches[0];
-        let elem = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (elem && elem.classList.contains('subcase')) elem.classList.add('drag-over');
-      });
-      sc.addEventListener('touchend', function(e) {
-        document.querySelectorAll('.drag-over').forEach(e=>e.classList.remove('drag-over'));
-        let touch = e.changedTouches[0];
-        let elem = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (dragFrom && elem && elem.classList.contains('subcase') && elem !== sc) {
-          let n2 = parseInt(elem.dataset.case,10);
-          if (dragFrom.n === n2) return;
-          let k=1, r2=0, c2=0, found=false;
-          for(let i=0;i<matrice.length;i++) for(let j=0;j<matrice[0].length;j++)
-            if (matrice[i][j]) { if (k++===n2){ r2=i;c2=j;found=true;break; } }
-          if (!found) return;
-          let {r: r1, c: c1} = dragFrom;
-          let tmp = matrice[r1][c1]; matrice[r1][c1]=matrice[r2][c2]; matrice[r2][c2]=tmp;
-          plan = matrice.map(row=>row.slice());
-          genererInterfaceFinale();
-        }
-        dragFrom = null;
-      });
+        dragging = false;
+        document.body.style.userSelect = "";
+      }
     });
-  });
-}
 
-// -------- AUTRES FONCTIONNALITÉS --------
-function prepareFonctionnalites(matrice) {
-  // Appel présents/absents
-  document.querySelectorAll('.subcase').forEach(sc => {
+    // Tactile (mobile/tablette)
+    sc.addEventListener('touchstart', function(e) {
+      dragging = true;
+      sc.classList.add('dragging');
+      let touch = e.touches[0];
+      offset.x = touch.clientX - sc.offsetLeft;
+      offset.y = touch.clientY - sc.offsetTop;
+    });
+    document.addEventListener('touchmove', function(e) {
+      if(dragging) {
+        let touch = e.touches[0];
+        let nx = touch.clientX - offset.x;
+        let ny = touch.clientY - offset.y;
+        sc.style.left = nx + "px"; sc.style.top = ny + "px";
+      }
+    }, {passive:false});
+    document.addEventListener('touchend', function(e) {
+      if(dragging) {
+        let touch = (e.changedTouches && e.changedTouches[0]) || {};
+        let nx = (touch.clientX || sc.offsetLeft+1) - offset.x;
+        let ny = (touch.clientY || sc.offsetTop+1) - offset.y;
+        positions[nom] = { x: nx, y: ny };
+        sc.classList.remove('dragging');
+        dragging = false;
+      }
+    });
+
+    // Sélection présence (appel)
     sc.addEventListener('click', e => {
       if (e.target.tagName === 'INPUT') return;
-      sc.classList.toggle('selected');
+      stateAppel[nom] = !stateAppel[nom];
+      sc.classList.toggle('selected', stateAppel[nom]);
     });
-  });
 
-  // Boutons infractions
-  document.querySelectorAll('.toggle').forEach(toggle => {
-    toggle.addEventListener('change', function() {
-      const sc = this.closest('.subcase');
+    // Infractions
+    sc.querySelector('.toggle').addEventListener('change', function() {
       const opts = sc.querySelector('.options');
       if (this.checked) opts.style.display = 'block';
       else {
         opts.style.display = 'none';
         opts.querySelectorAll('input[type=checkbox]').forEach(cb => {
-          if (cb.checked) { removeResult(cb.dataset.case, cb.value); cb.checked = false; }
+          cb.checked = false;
+          delete infractions[nom][cb.value];
         });
       }
     });
-  });
-  document.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', function() {
-      this.checked ? addResult(this.dataset.case, this.value)
-                   : removeResult(this.dataset.case, this.value);
-    });
-  });
-
-  // Détail des infractions (li)
-  const resultList = document.getElementById('result-list');
-  resultList.onclick = function(e) {
-    const li = e.target;
-    if (li.tagName !== 'LI' || li.classList.contains('detail-select')) return;
-    const prev = resultList.querySelector('.detail-select');
-    if (prev) prev.remove();
-    const [prenom, rubrique] = li.textContent.split(' : ');
-    const opts = detailsOptions[rubrique];
-    if (!opts) return;
-    const c = findCaseByPrenom(matrice, prenom);
-    const sel = document.createElement('li');
-    sel.className = 'detail-select';
-    opts.forEach(opt => {
-      const lbl = document.createElement('label');
-      const cb  = document.createElement('input');
-      cb.type = 'checkbox'; cb.dataset.case = c; cb.value = opt;
-      lbl.append(cb, ' ' + opt);
-      sel.append(lbl, document.createElement('br'));
-      cb.addEventListener('change', () => {
-        if (cb.checked) {
-          li.textContent = `${prenom} : ${rubrique} : ${opt}`;
-          sel.remove();
-        }
+    sc.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', function() {
+        if (this.checked) infractions[nom][this.value] = "";
+        else delete infractions[nom][this.value];
+        updateResultList();
       });
     });
-    li.insertAdjacentElement('afterend', sel);
-  };
-  function addResult(c,v){
-    const id = `result-${c}-${v}`;
-    if (!document.getElementById(id)) {
+  });
+  updateResultList();
+}
+function updateResultList() {
+  resultList.innerHTML = '';
+  eleves.forEach(nom => {
+    Object.keys(infractions[nom]).forEach(cat => {
       const li = document.createElement('li');
-      li.id = id;
-      li.textContent = `${findPrenomByCase(matrice, c)} : ${v}`;
-      resultList.append(li);
-    }
-  }
-  function removeResult(c,v){
-    const el = document.getElementById(`result-${c}-${v}`);
-    if (!el) return;
-    const nxt = el.nextElementSibling;
-    if (nxt && nxt.classList.contains('detail-select')) nxt.remove();
-    el.remove();
-  }
-  // Utilitaires pour retrouver prénom/case
-  function findPrenomByCase(matrice, n) {
-    let count = 1;
-    for (const ligne of matrice) for (const nom of ligne)
-      if (nom && count++ === parseInt(n)) return nom;
-    return "Case " + n;
-  }
-  function findCaseByPrenom(matrice, prenom) {
-    let count = 1;
-    for (const ligne of matrice) for (const nom of ligne)
-      if (nom && nom === prenom) return count;
-      else if (nom) count++;
-    return -1;
-  }
-
-  // Appel terminé
-  document.getElementById('appel-box').onclick = () => {
-    const subs = Array.from(document.querySelectorAll('.subcase'));
-    const pres = subs.filter(sc => sc.classList.contains('selected'));
-    const abs  = subs.filter(sc => !sc.classList.contains('selected'));
-    let html = `<p>Élèves présents : ${pres.length}</p><p>Élèves absents :</p>`;
-    if (abs.length) abs.forEach(sc => {
-      html += `<p>${sc.querySelector('.title').textContent}</p>`;
-    });
-    else html += `<p>—</p>`;
-    document.getElementById('appel-result').innerHTML = html;
-  };
-
-  // Mode contrôle et pages rendues
-  const rendus = [], nomsRendus = [];
-  const modeBtn = document.getElementById('mode-controle-box');
-  const controleResult = document.getElementById('controle-result');
-  let modeActive = false;
-  modeBtn.onclick = () => {
-    modeActive = !modeActive;
-    modeBtn.classList.toggle('active', modeActive);
-    controleResult.innerHTML = modeActive
-      ? '<p class="control-message">A terminé le contrôle</p>'
-      : '';
-    if (!modeActive) { rendus.length = 0; nomsRendus.length = 0; }
-    document.querySelectorAll('.subcase').forEach(sc => {
-      const c = sc.dataset.case;
-      if (modeActive) {
-        const span = sc.querySelector('span.title');
-        if (!span) return;
-        const a = document.createElement('a');
-        a.href = '#'; a.textContent = findPrenomByCase(matrice, c); a.className = 'title-link';
-        a.addEventListener('click', e => {
-          e.stopPropagation();
-          const line = document.createElement('p');
-          line.innerHTML = `${findPrenomByCase(matrice, c)} : page : <input type="number" min="1">`;
-          controleResult.append(line);
-          const input = line.querySelector('input');
-          input.focus();
-          input.addEventListener('keydown', evt => {
-            if (evt.key === 'Enter') {
-              const pages = parseInt(input.value, 10) || 0;
-              line.textContent = `${findPrenomByCase(matrice, c)} : page : ${pages}`;
-              sc.classList.add('completed');
-              rendus.push({ case: c, pages });
-              for (let i = 0; i < pages; i++) {
-                nomsRendus.push(findPrenomByCase(matrice, c));
-              }
+      li.textContent = `${nom} : ${cat}`;
+      li.onclick = function() {
+        const prev = resultList.querySelector('.detail-select');
+        if (prev) prev.remove();
+        const opts = detailsOptions[cat];
+        if (!opts) return;
+        const sel = document.createElement('li');
+        sel.className = 'detail-select';
+        opts.forEach(opt => {
+          const lbl = document.createElement('label');
+          const cb  = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = opt;
+          cb.checked = infractions[nom][cat] === opt;
+          lbl.append(cb, ' ' + opt);
+          sel.append(lbl, document.createElement('br'));
+          cb.addEventListener('change', () => {
+            if (cb.checked) {
+              infractions[nom][cat] = opt;
+              li.textContent = `${nom} : ${cat} : ${opt}`;
+              sel.remove();
             }
           });
         });
-        span.replaceWith(a);
-      } else {
-        const link = sc.querySelector('a.title-link');
-        if (!link) return;
-        const span = document.createElement('span');
-        span.className = 'title';
-        span.textContent = findPrenomByCase(matrice, c);
-        link.replaceWith(span);
-      }
+        li.insertAdjacentElement('afterend', sel);
+      };
+      resultList.appendChild(li);
     });
-    modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
-  };
-
-  // Export JSON
-  document.getElementById('lien-box').onclick = () => {
-    const infractionsByCat = {
-      "Comportement": [], "Travail non fait": [], "Oubli de matériel": []
-    };
-    document.querySelectorAll('#result-list li:not(.detail-select)').forEach(li => {
-      const [prenom, cat] = li.textContent.split(' : ');
-      infractionsByCat[cat]?.push(li.textContent);
-    });
-    const subs = Array.from(document.querySelectorAll('.subcase'));
-    const presents = subs.filter(sc => sc.classList.contains('selected')).length;
-    const absents  = subs.filter(sc => !sc.classList.contains('selected'))
-                         .map(sc => sc.querySelector('.title').textContent);
-    const copiesOrdr = [];
-    rendus.forEach(o => {
-      for (let i = 0; i < o.pages; i++) {
-        copiesOrdr.push(o.case ? findPrenomByCase(matrice, o.case) : "");
-      }
-    });
-    const now = new Intl.DateTimeFormat('fr-FR', {
-      timeZone:'Europe/Paris',year:'numeric',month:'2-digit',
-      day:'2-digit',hour:'2-digit',minute:'2-digit'
-    }).format(new Date()).replace(',','');
-    const [dp,tp] = now.split(' ');
-    const [jj,MM] = dp.split('/'), [hh,mm] = tp.split(':');
-    const stamp = `${jj}-${MM}-${hh}h${mm}`;
-    const output = {
-      date: `${stamp} (Europe/Paris)`,
-      infractions: infractionsByCat,
-      presents,
-      absents,
-      "Copies dans l'ordre des rendus": copiesOrdr
-    };
-    const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `plan_de_classe_${stamp}.json`;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
+  });
 }
 
-// Réinit général
-document.getElementById('reset-box').onclick = () => { demandeInfosForm(); };
+// Appel terminé
+document.getElementById('appel-box').onclick = () => {
+  const presents = eleves.filter(nom=>stateAppel[nom]).length;
+  const absents = eleves.filter(nom=>!stateAppel[nom]);
+  let html = `<p>Élèves présents : ${presents}</p><p>Élèves absents :</p>`;
+  if (absents.length) absents.forEach(nom => {
+    html += `<p>${nom}</p>`;
+  }); else html += `<p>—</p>`;
+  appelResult.innerHTML = html;
+};
 
-// Lance la première demande
-demandeInfosForm();
+// Mode contrôle
+let modeActive = false;
+modeBtn.onclick = () => {
+  modeActive = !modeActive;
+  modeBtn.classList.toggle('active', modeActive);
+  controleResult.innerHTML = modeActive
+    ? '<p class="control-message">A terminé le contrôle</p>'
+    : '';
+  if (!modeActive) { rendus = []; nomsRendus = []; }
+  document.querySelectorAll('.student-card').forEach(sc => {
+    const nom = sc.getAttribute('data-nom');
+    if (modeActive) {
+      const span = sc.querySelector('span.title');
+      if (!span) return;
+      const a = document.createElement('a');
+      a.href = '#'; a.textContent = nom; a.className = 'title-link';
+      a.addEventListener('click', e => {
+        e.stopPropagation();
+        const line = document.createElement('p');
+        line.innerHTML = `${nom} : page : <input type="number" min="1">`;
+        controleResult.append(line);
+        const input = line.querySelector('input');
+        input.focus();
+        input.addEventListener('keydown', evt => {
+          if (evt.key === 'Enter') {
+            const pages = parseInt(input.value, 10) || 0;
+            line.textContent = `${nom} : page : ${pages}`;
+            sc.classList.add('completed');
+            rendus.push({ nom, pages });
+            for (let i = 0; i < pages; i++) nomsRendus.push(nom);
+          }
+        });
+      });
+      span.replaceWith(a);
+    } else {
+      const link = sc.querySelector('a.title-link');
+      if (!link) return;
+      const span = document.createElement('span');
+      span.className = 'title';
+      span.textContent = nom;
+      link.replaceWith(span);
+    }
+  });
+  modeBtn.textContent = modeActive ? 'Quitter contrôle' : 'Mode contrôle';
+};
+
+// Export JSON
+document.getElementById('lien-box').onclick = () => {
+  const infractionsByCat = { "Comportement": [], "Travail non fait": [], "Oubli de matériel": [] };
+  eleves.forEach(nom=>{
+    Object.keys(infractions[nom]).forEach(cat=>{
+      if(cat in infractionsByCat)
+        infractionsByCat[cat].push(`${nom} : ${cat}` + (infractions[nom][cat] ? ` : ${infractions[nom][cat]}` : ""));
+    });
+  });
+  const presents = eleves.filter(nom=>stateAppel[nom]).length;
+  const absents = eleves.filter(nom=>!stateAppel[nom]);
+  const copiesOrdr = [];
+  rendus.forEach(o => {
+    for (let i = 0; i < o.pages; i++) copiesOrdr.push(o.nom);
+  });
+  const now = new Intl.DateTimeFormat('fr-FR', {
+    timeZone:'Europe/Paris',year:'numeric',month:'2-digit',
+    day:'2-digit',hour:'2-digit',minute:'2-digit'
+  }).format(new Date()).replace(',','');
+  const [dp,tp] = now.split(' ');
+  const [jj,MM] = dp.split('/'), [hh,mm] = tp.split(':');
+  const stamp = `${jj}-${MM}-${hh}h${mm}`;
+  const output = {
+    date: `${stamp} (Europe/Paris)`,
+    infractions: infractionsByCat,
+    presents,
+    absents,
+    "Copies dans l'ordre des rendus": copiesOrdr,
+    positions
+  };
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `plan_de_classe_${stamp}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+// Réinitialisation
+document.getElementById('reset-box').onclick = () => { resetAll(); appelResult.innerHTML = ""; controleResult.innerHTML = ""; modeBtn.classList.remove('active'); modeBtn.textContent = 'Mode contrôle'; };
+
 </script>
 </body>
 </html>
