@@ -17,6 +17,12 @@
     }
     .lien-box:hover { background-color: #00bfff; }
     #mode-controle-box.active { background-color: #ff4d4d; color: #fff; }
+    #reset-box {
+      background: #ffb6c1 !important;
+      color: #333;
+      font-weight: bold;
+      border: 1.2px solid #f06292;
+    }
     .free-area {
       position: relative;
       width: 980px;
@@ -94,6 +100,7 @@
       <div class="lien-box" id="lien-box">Lien</div>
       <div class="lien-box" id="appel-box">Appel terminé</div>
       <div class="lien-box" id="mode-controle-box">Mode contrôle</div>
+      <div class="lien-box" id="reset-box">Nouvelle séance</div>
       <div id="appel-result"></div>
     </div>
     <div class="free-area" id="free-area"></div>
@@ -167,6 +174,7 @@ const resultList = document.getElementById('result-list');
 const modeBtn = document.getElementById('mode-controle-box');
 const controleResult = document.getElementById('controle-result');
 const appelResult = document.getElementById('appel-result');
+const resetBtn = document.getElementById('reset-box');
 
 function resetAll() {
   positions = {};
@@ -185,6 +193,22 @@ function resetAll() {
   saveToStorage();
   renderAll();
 }
+
+// === NOUVELLE SEANCE (réinitialise tout sauf les positions) ===
+function nouvelleSeance() {
+  // Ne touche pas à positions
+  stateAppel = {};
+  infractions = {};
+  rendus = [];
+  nomsRendus = [];
+  eleves.forEach(nom => {
+    stateAppel[nom] = false;
+    infractions[nom] = {};
+  });
+  saveToStorage();
+  renderAll();
+}
+resetBtn.onclick = nouvelleSeance;
 
 if (!loadFromStorage()) resetAll();
 else renderAll();
@@ -468,7 +492,6 @@ document.getElementById('lien-box').onclick = () => {
     presents,
     absents,
     "Copies dans l'ordre des rendus": copiesOrdr
-    // positions supprimé !
   };
   const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
